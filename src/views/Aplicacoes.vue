@@ -47,7 +47,7 @@
           :image="manutencaoImg"
           max-width="200"
           theme="light"
-          title="Cadastro de Máquinas"
+          title="Manual de Máquinas"
         ></v-card>
       </router-link>
     </div>
