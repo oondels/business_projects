@@ -1,8 +1,8 @@
 <template>
   <div class="container my-5 p-4 bg-light rounded shadow-sm">
-    <h5 class="mb-3 text-primary">Cadastro de máquinas</h5>
+    <h5 class="mb-3 text-primary">Manual de Máquinas</h5>
 
-    <div class="mb-3">
+    <div class="mb-3" v-if="permissaoManut()">
       <v-expansion-panels>
         <v-expansion-panel title="Cadastrar Máquina">
           <v-expansion-panel-text>
@@ -14,27 +14,52 @@
 
     <div class="row mb-4">
       <div class="col-md-6 mb-3 mb-md-0">
-        <v-select variant="outlined" density="compact" label="Setores" :items="setores" v-model="setor"
-          @update:modelValue="maquina = ''; adicionaFiltro()" outlined></v-select>
+        <v-select
+          variant="outlined"
+          density="compact"
+          label="Setores"
+          :items="setores"
+          v-model="setor"
+          @update:modelValue="
+            maquina = '';
+            adicionaFiltro();
+          "
+          outlined
+        ></v-select>
       </div>
 
       <div class="col-md-6">
-        <v-select variant="outlined" density="compact" label="Máquinas" :items="maquinas" v-model="maquina"
-          @update:modelValue="adicionaFiltro()" outlined></v-select>
+        <v-select
+          variant="outlined"
+          density="compact"
+          label="Máquinas"
+          :items="maquinas"
+          v-model="maquina"
+          @update:modelValue="adicionaFiltro()"
+          outlined
+        ></v-select>
       </div>
     </div>
 
     <div>
       <div class="mb-3">
-        <p class="text-secondary">Deseja aplicar um filtro?</p>
-        <v-btn :class="{ active: tipo === 'Mecânico' }" class="btn btn-outline-primary me-2"
-          @click="filtroDefeitos('Mecânico')">
+        <p class="text-primary">Deseja aplicar um filtro?</p>
+        <button
+          :class="{
+            'btn-success': tipo === 'Mecânico',
+          }"
+          class="btn btn-secondary me-2"
+          @click="filtroDefeitos('Mecânico')"
+        >
           Mecânico
-        </v-btn>
-        <v-btn :class="{ active: tipo === 'Operacional' }" class="btn btn-outline-primary"
-          @click="filtroDefeitos('Operacional')">
+        </button>
+        <button
+          :class="{ 'btn-success': tipo === 'Operacional' }"
+          class="btn btn-secondary"
+          @click="filtroDefeitos('Operacional')"
+        >
           Operacional
-        </v-btn>
+        </button>
       </div>
       <div v-for="(maquinas, setorNome) in maquinasObject" :key="setorNome">
         <h5 class="my-4 text-blue">{{ setorNome }}</h5>
@@ -50,13 +75,19 @@
                           <div v-if="problemas.length > 0">
                             <v-card class="card mx-auto p-2" max-width="700">
                               <v-list>
-                                <v-list-item v-for="(problema, problemaId) in problemas" :key="problemaId"
-                                  :value="problema" color="primary" rounded="xl"
-                                  class="list-group-item d-flex justify-content-between align-items-center border-bottom border-1r">
+                                <v-list-item
+                                  v-for="(problema, problemaId) in problemas"
+                                  :key="problemaId"
+                                  :value="problema"
+                                  color="primary"
+                                  rounded="xl"
+                                  class="list-group-item d-flex justify-content-between align-items-center border-bottom border-1r"
+                                >
                                   <v-list-item-title class="text-wrap">{{ problema }}</v-list-item-title>
                                   <template v-slot:append>
-                                    <i style="color: #2196f3; font-size: 1.25rem"
-                                      class="material-icons-round opacity-10 fs-4">{{ getIcon(problema) }}</i>
+                                    <i style="color: #2196f3; font-size: 1.25rem" class="material-icons-round opacity-10 fs-4">{{
+                                      getIcon(problema)
+                                    }}</i>
                                   </template>
                                 </v-list-item>
                               </v-list>
@@ -84,8 +115,9 @@
 
 <script>
 import axios from "axios";
-import CadastroDefeitos from "./components/manutencao/CadastroDefeitos.vue";
+import VueJwtDecode from "vue-jwt-decode";
 import ip from "../ip";
+import CadastroDefeitos from "./components/manutencao/CadastroDefeitos.vue";
 
 export default {
   name: "manutencao-component",
@@ -95,12 +127,12 @@ export default {
   data() {
     return {
       setores: [],
-      setor: 'Apoio',
+      setor: "Apoio",
       maquinas: [],
-      maquina: '',
+      maquina: "",
       maquinasObject: {},
       maquinasObjectOriginal: {},
-      tipo: '',
+      tipo: "",
 
       mostraDados: false,
     };
@@ -120,7 +152,7 @@ export default {
         setor: this.setor,
         maquina: this.maquina,
         tipo: this.tipo,
-      })
+      });
     },
 
     getIcon(tag) {
@@ -133,7 +165,7 @@ export default {
     queryMaquinas(filtro) {
       this.mostraDados = false;
       axios
-        .get(`http://${ip}:3042/api/manual_maqs`, { params: { filtro: filtro } })
+        .get(`http://${ip}:3050/api/manual_maqs`, { params: { filtro: filtro } })
         .then((response) => {
           this.maquinasObject = response.data.manualMaquinas;
           this.maquinas = response.data.maquinas;
@@ -145,11 +177,39 @@ export default {
           console.error("Error:", error);
         });
     },
+    decodeJwt() {
+      let token = sessionStorage.getItem("token");
+      if (token) {
+        return VueJwtDecode.decode(token);
+      }
+    },
+    permissaoManut() {
+      if (!this.decodeJwt()) {
+        return false;
+      }
+      if (
+        this.decodeJwt().setor === "AUTOMACAO" ||
+        this.decodeJwt().usuario === "SERGIO.GONCALVES" ||
+        this.decodeJwt().usuario === "WESLEY.REIS" ||
+        this.decodeJwt().usuario === "EDILSON.SANTANA" ||
+        this.decodeJwt().usuario === "MARIA.CALMON" ||
+        this.decodeJwt().usuario === "NATALIA.REBOUCAS" ||
+        this.decodeJwt().usuario === "MONICA.LEITE"
+      ) {
+        return true;
+      }
+    },
 
     filtroDefeitos(tipo) {
-      this.tipo = tipo;
+      if (this.tipo === tipo) {
+        this.tipo = "";
+      } else {
+        this.tipo = tipo;
+      }
       this.adicionaFiltro();
     },
   },
 };
 </script>
+
+<style></style>

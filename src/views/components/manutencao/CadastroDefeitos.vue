@@ -2,55 +2,110 @@
   <v-form ref="form" class="p-4" style="border-radius: 8px">
     <div class="row g-3">
       <div class="col-md-6">
-        <v-text-field density="compact" variant="outlined" v-model="nomeMaquina" label="Nome da Máquina" required
-          outlined :rules="campoRegra" class="mb-3" style="background-color: white; border-radius: 4px"></v-text-field>
+        <v-text-field
+          density="compact"
+          variant="outlined"
+          v-model="nomeMaquina"
+          label="Nome da Máquina"
+          required
+          outlined
+          :rules="campoRegra"
+          class="mb-3"
+          style="background-color: white; border-radius: 4px"
+        ></v-text-field>
       </div>
       <div class="col-md-6">
-        <v-select density="compact" variant="outlined" :rules="campoRegra" v-model="setorSelecionado" :items="setores"
-          label="Setor/Setores" multiple required clearable outlined class="mb-3"
-          style="background-color: white; border-radius: 4px"></v-select>
+        <v-select
+          density="compact"
+          variant="outlined"
+          :rules="campoRegra"
+          v-model="setorSelecionado"
+          :items="setores"
+          label="Setor/Setores"
+          multiple
+          required
+          clearable
+          outlined
+          class="mb-3"
+          style="background-color: white; border-radius: 4px"
+        ></v-select>
       </div>
     </div>
 
     <div class="mb-8" v-for="(problema, problemaIndex) in problemas" :key="problemaIndex">
-      <div class="p-3 mb-3"
-        style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25)">
+      <div class="p-3 mb-3" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25)">
         <div class="d-flex justify-content-between align-items-center">
           <h5 class="pb-2" style="color: #0d47a1">Defeito {{ problemaIndex + 1 }}</h5>
-          <i @click="removeProblema(problemaIndex)" v-if="problemaIndex > 0"
-            class="cursor-pointer text-danger material-icons-round opacity-10 fs-3">delete</i>
+          <i
+            @click="removeProblema(problemaIndex)"
+            v-if="problemaIndex > 0"
+            class="cursor-pointer text-danger material-icons-round opacity-10 fs-3"
+            >delete</i
+          >
         </div>
 
-        <v-text-field density="compact" v-model="problema.name" :label="'Nome do Defeito ' + (problemaIndex + 1)"
-          :rules="campoRegra" variant="outlined" required outlined
-          style="background-color: white; border-radius: 4px"></v-text-field>
+        <v-text-field
+          density="compact"
+          v-model="problema.name"
+          :label="'Nome do Defeito ' + (problemaIndex + 1)"
+          :rules="campoRegra"
+          variant="outlined"
+          required
+          outlined
+          style="background-color: white; border-radius: 4px"
+        ></v-text-field>
 
         <h5 class="pb-2" style="color: #0d47a1">Soluções Mecânico</h5>
 
-        <v-text-field hint="Clique em enter para confirmar o item!" variant="outlined" :rules="campoRegra"
-          density="compact" v-model="problema.Mecanico.input" :label="`Adicionar soluções para Defeito Mecânico`"
-          @keyup.enter="() => addTag(problema.Mecanico.input, problemaIndex, 'Mecanico')" outlined
-          style="background-color: white; border-radius: 4px"></v-text-field>
+        <v-text-field
+          hint="Clique em enter para confirmar o item!"
+          variant="outlined"
+          :rules="campoRegra"
+          density="compact"
+          v-model="problema.Mecanico.input"
+          :label="`Adicionar soluções para Defeito Mecânico`"
+          @keyup.enter="() => addTag(problema.Mecanico.input, problemaIndex, 'Mecanico')"
+          outlined
+          style="background-color: white; border-radius: 4px"
+        ></v-text-field>
 
         <v-chip-group column>
-          <v-chip v-for="(tagMecanico, tagIndexMecanico) in problema.Mecanico.defeitos || []" :key="tagIndexMecanico"
-            @click="() => removeTag(tagIndexMecanico, problemaIndex, 'Mecanico')" close class="me-2 mb-2"
-            text-color="white">
+          <v-chip
+            v-for="(tagMecanico, tagIndexMecanico) in problema.Mecanico.defeitos || []"
+            :key="tagIndexMecanico"
+            @click="() => removeTag(tagIndexMecanico, problemaIndex, 'Mecanico')"
+            close
+            class="me-2 mb-2"
+            text-color="white"
+          >
             {{ tagMecanico }}
           </v-chip>
         </v-chip-group>
 
         <h5 class="pb-2" style="color: #0d47a1">Soluções Operacionais</h5>
 
-        <v-text-field hint="Clique em enter para confirmar o item!" variant="outlined" :rules="campoRegra"
-          density="compact" v-model="problema.Operacional.input" :label="`Adicionar soluções para Defeito Operacional`"
-          @keyup.enter="() => addTag(problema.Operacional.input, problemaIndex, 'Operacional')" outlined class="mb-3"
-          style="background-color: white; border-radius: 4px"></v-text-field>
+        <v-text-field
+          hint="Clique em enter para confirmar o item!"
+          variant="outlined"
+          :rules="campoRegra"
+          density="compact"
+          v-model="problema.Operacional.input"
+          :label="`Adicionar soluções para Defeito Operacional`"
+          @keyup.enter="() => addTag(problema.Operacional.input, problemaIndex, 'Operacional')"
+          outlined
+          class="mb-3"
+          style="background-color: white; border-radius: 4px"
+        ></v-text-field>
 
         <v-chip-group column class="mb-3">
-          <v-chip v-for="(tagOperacional, tagIndexOperacional) in problema.Operacional.defeitos || []"
-            :key="tagIndexOperacional" @click="() => removeTag(tagIndexOperacional, problemaIndex, 'Operacional')" close
-            class="me-2 mb-2" text-color="white">
+          <v-chip
+            v-for="(tagOperacional, tagIndexOperacional) in problema.Operacional.defeitos || []"
+            :key="tagIndexOperacional"
+            @click="() => removeTag(tagIndexOperacional, problemaIndex, 'Operacional')"
+            close
+            class="me-2 mb-2"
+            text-color="white"
+          >
             {{ tagOperacional }}
           </v-chip>
         </v-chip-group>
@@ -62,28 +117,53 @@
     <div class="mt-4" v-for="(item, itemIndex) in checklist" :key="itemIndex">
       <h5 style="color: #0d47a1">Itens do Checklist Operacional</h5>
 
-      <v-text-field hint="Clique em enter para confirmar o item!" variant="outlined" density="compact"
-        v-model="item.Operacional.input" :label="`Adicionar soluções para Defeito Operacional`"
-        @keyup.enter="() => addTag(item.Operacional.input, itemIndex, 'Operacional', 1)" outlined
-        style="background-color: white; border-radius: 4px"></v-text-field>
+      <v-text-field
+        hint="Clique em enter para confirmar o item!"
+        variant="outlined"
+        density="compact"
+        v-model="item.Operacional.input"
+        :label="`Adicionar soluções para Defeito Operacional`"
+        @keyup.enter="() => addTag(item.Operacional.input, itemIndex, 'Operacional', 1)"
+        outlined
+        style="background-color: white; border-radius: 4px"
+      ></v-text-field>
 
       <v-chip-group column>
-        <v-chip v-for="(tagChecklist, tagIndex) in item.Operacional.itens || []" :key="tagIndex"
-          @click="() => removeTag(tagIndex, itemIndex, 'Operacional', 1)" close class="me-2" text-color="white">
+        <v-chip
+          v-for="(tagChecklist, tagIndex) in item.Operacional.itens || []"
+          :key="tagIndex"
+          @click="() => removeTag(tagIndex, itemIndex, 'Operacional', 1)"
+          close
+          class="me-2"
+          text-color="white"
+        >
           {{ tagChecklist }}
         </v-chip>
       </v-chip-group>
 
       <h5 style="color: #0d47a1">Itens do Checklist Mecanico</h5>
 
-      <v-text-field hint="Clique em enter para confirmar o item!" variant="outlined" density="compact"
-        v-model="item.Mecanico.input" :label="`Adicionar soluções para Defeito Mecanico`"
-        @keyup.enter="() => addTag(item.Mecanico.input, itemIndex, 'Mecanico', 1)" outlined
-        style="background-color: white; border-radius: 4px"></v-text-field>
+      <v-text-field
+        hint="Clique em enter para confirmar o item!"
+        variant="outlined"
+        density="compact"
+        v-model="item.Mecanico.input"
+        :label="`Adicionar soluções para Defeito Mecanico`"
+        @keyup.enter="() => addTag(item.Mecanico.input, itemIndex, 'Mecanico', 1)"
+        outlined
+        style="background-color: white; border-radius: 4px"
+      ></v-text-field>
 
       <v-chip-group column class="d-flex flex-wrap">
-        <v-chip v-for="(tagChecklist, tagIndex) in item.Mecanico.itens || []" :key="tagIndex"
-          @click="() => removeTag(tagIndex, itemIndex, 'Mecanico', 1)" close class="shadow-sm" color="primary" outlined>
+        <v-chip
+          v-for="(tagChecklist, tagIndex) in item.Mecanico.itens || []"
+          :key="tagIndex"
+          @click="() => removeTag(tagIndex, itemIndex, 'Mecanico', 1)"
+          close
+          class="shadow-sm"
+          color="primary"
+          outlined
+        >
           {{ tagChecklist }}
         </v-chip>
       </v-chip-group>
@@ -96,7 +176,6 @@
   </v-form>
 
   <alert ref="alert" />
-
 </template>
 
 <script>
@@ -206,7 +285,7 @@ export default {
       axios
         .post(`http://${ip}:3042/cadastro-maquina`, this.newManual)
         .then(() => {
-          this.$refs.alert.mostrarAlerta('success', 'bi bi-exclamations', 'Sucesso', 'Máquina cadastrada com Sucesso')
+          this.$refs.alert.mostrarAlerta("success", "bi bi-exclamations", "Sucesso", "Máquina cadastrada com Sucesso");
           this.$emit("informacoes-salvas");
         })
         .catch((error) => {
@@ -225,7 +304,7 @@ export default {
   },
 
   components: {
-    Alert
-  }
+    Alert,
+  },
 };
 </script>
