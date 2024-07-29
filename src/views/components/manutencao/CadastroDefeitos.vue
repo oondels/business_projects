@@ -32,7 +32,7 @@
       </div>
     </div>
 
-    <div class="mb-8" v-for="(problema, problemaIndex) in problemas" :key="problemaIndex">
+    <div class="mb-3" v-for="(problema, problemaIndex) in problemas" :key="problemaIndex">
       <div class="p-3 mb-3" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25)">
         <div class="d-flex justify-content-between align-items-center">
           <h5 class="pb-2" style="color: #0d47a1">Defeito {{ problemaIndex + 1 }}</h5>

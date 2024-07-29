@@ -165,7 +165,7 @@ export default {
     queryMaquinas(filtro) {
       this.mostraDados = false;
       axios
-        .get(`http://${ip}:3050/api/manual_maqs`, { params: { filtro: filtro } })
+        .get(`http://${ip}:3042/api/manual_maqs`, { params: { filtro: filtro } })
         .then((response) => {
           this.maquinasObject = response.data.manualMaquinas;
           this.maquinas = response.data.maquinas;
