@@ -1,29 +1,30 @@
 import { createRouter, createWebHashHistory } from "vue-router";
 
-import Inicio from "../views/Inicio.vue";
 import Aplicacoes from "../views/Aplicacoes.vue";
+import Inicio from "../views/Inicio.vue";
 import SignIn from "../views/SignIn.vue";
 import SignUp from "../views/SignUp.vue";
 
 import FerramentasLean from "../views/FerramentasLean.vue";
-import Refeitorio from "../views/Refeitorio.vue";
-import Reserva from "../views/Reserva.vue";
-import Provisorio from "../views/Provisorio.vue";
-import PCP from "../views/PCP.vue";
-import TemposMetodos from "../views/TemposMetodos.vue";
-import Point from "../views/Point.vue";
 import Informativo from "../views/Informativo.vue";
 import InformativoResultado from "../views/InformativoResultado.vue";
-import Quimico from "../views/Quimico.vue";
 import Manutencao from "../views/Manutencao.vue";
+import PCP from "../views/PCP.vue";
+import Point from "../views/Point.vue";
+import Provisorio from "../views/Provisorio.vue";
+import Quimico from "../views/Quimico.vue";
+import Refeitorio from "../views/Refeitorio.vue";
+import Reserva from "../views/Reserva.vue";
+import TemposMetodos from "../views/TemposMetodos.vue";
+import VotacaoPessoa from "../views/VotacaoPessoa.vue";
 
-import VueJwtDecode from 'vue-jwt-decode';
-import Sorteio from "../views/Sorteio.vue";
-import DepartamentoPessoal from "../views/DepartamentoPessoal.vue";
+import VueJwtDecode from "vue-jwt-decode";
 import BaixaProduto from "../views/BaixaProduto.vue";
+import DepartamentoPessoal from "../views/DepartamentoPessoal.vue";
+import Sorteio from "../views/Sorteio.vue";
 
 function decodeJwt() {
-  let token = sessionStorage.getItem('token');
+  let token = sessionStorage.getItem("token");
   if (token) {
     return VueJwtDecode.decode(token);
   }
@@ -90,14 +91,14 @@ const routes = [
     path: "/departamento-pessoal/provisorio",
     name: "Provisorio",
     component: Provisorio,
-    meta: { requiresAuth: true, allowedSectors: ['AUTOMACAO', 'DEPARTAMENTO PESSOAL'] }
+    meta: { requiresAuth: true, allowedSectors: ["AUTOMACAO", "DEPARTAMENTO PESSOAL"] },
   },
 
   {
     path: "/pcp",
     name: "PCP",
     component: PCP,
-    meta: { requiresAuth: true, allowedSectors: ['AUTOMACAO', 'PPCP'] }
+    meta: { requiresAuth: true, allowedSectors: ["AUTOMACAO", "PPCP"] },
   },
 
   {
@@ -152,8 +153,13 @@ const routes = [
     path: "/manutencao",
     name: "Manutencao - TPM de Máquinas",
     component: Manutencao,
-  }
+  },
 
+  {
+    path: "/votacaoPessoa",
+    name: "Votação",
+    component: VotacaoPessoa,
+  },
 ];
 
 const router = createRouter({
@@ -163,20 +169,20 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  if (to.matched.some(record => record.meta.requiresAuth)) {
+  if (to.matched.some((record) => record.meta.requiresAuth)) {
     if (!isAutenticated()) {
-      next({ name: 'SignIn' });
+      next({ name: "SignIn" });
     } else {
       const userSetor = getSetor();
-      if (to.matched.some(record => record.meta.allowedSectors.includes(userSetor) || userSetor === 'AUTOMACAO')) {
+      if (to.matched.some((record) => record.meta.allowedSectors.includes(userSetor) || userSetor === "AUTOMACAO")) {
         next();
       } else {
-        next({ name: 'Inicio' });
+        next({ name: "Inicio" });
       }
     }
   } else {
     next();
   }
-})
+});
 
 export default router;
