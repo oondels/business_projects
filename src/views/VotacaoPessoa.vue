@@ -1,6 +1,7 @@
 <template>
   <div class="main">
     <h2>Realize a votação dentre essas pessoas</h2>
+
     <div class="choices">
       <v-expansion-panels class="pa-4" variant="popout">
         <v-expansion-panel v-for="(people, i) in peopleToVote" :key="i" hide-actions>
@@ -42,10 +43,10 @@
                           <v-toolbar :title="'Registrar voto para ' + people.name"></v-toolbar>
 
                           <v-card-text class="text-h4 pa-5">
-                            Identifique suas Credenciais
+                            <NfcReader @nfcData="(nfcData) => readNfcData(nfcData, people.name)" />
 
                             <v-card-actions class="justify-end">
-                              <v-btn text="Enviar" @click="isActive.value = false"></v-btn>
+                              <v-btn style="opacity: 0" text="enviar" @click="isActive.value = false"></v-btn>
                             </v-card-actions>
                           </v-card-text>
                         </v-card>
@@ -59,14 +60,22 @@
       </v-expansion-panels>
     </div>
   </div>
+  <alert ref="alert" />
 </template>
 
 <script>
+import NfcReader from "./components/NfcReader.vue";
+import axios from "axios";
+import ip from "../ip";
+import Alert from "./components/Alert.vue";
+
 export default {
   name: "VotacaoPessoa",
-  components: {},
+  components: { NfcReader, Alert },
+
   data() {
     return {
+      choiceVote: "",
       peopleToVote: [
         {
           photo: "https://avatars0.githubusercontent.com/u/9064066?v=4&s=460",
@@ -83,8 +92,29 @@ export default {
       ],
     };
   },
+
   methods: {
     validateUser() {},
+
+    readNfcData(data, choice) {
+      this.choiceVote = choice;
+      axios
+        .get(`http://${ip}:3043/post-choice`, { params: { userRfid: data } })
+        .then((response) => {
+          this.$refs.alert.mostrarAlerta(
+            "success",
+            "fas fa-exclamation-triangle",
+            "Sucesso",
+            `Voto Computado para o funcionário ${choice}`
+          );
+          console.log("Dados enviados:", response.data);
+        })
+        .catch((error) => {
+          this.$refs.alert.mostrarAlerta("warning", "fas fa-exclamation-triangle", "Erro", error.response.data);
+          console.error("Error:", error);
+        });
+    },
+
     choiceEmployee(option) {
       this.peopleToVote.forEach((people) => {
         if (people.name === option) {
