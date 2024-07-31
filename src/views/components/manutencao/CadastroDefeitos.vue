@@ -285,10 +285,11 @@ export default {
       axios
         .post(`http://${ip}:3042/cadastro-maquina`, this.newManual)
         .then(() => {
-          this.$refs.alert.mostrarAlerta("success", "bi bi-exclamations", "Sucesso", "Máquina cadastrada com Sucesso");
+          this.$refs.alert.mostrarAlerta("success", "done_outline", "Sucesso", "Máquina cadastrada com Sucesso");
           this.$emit("informacoes-salvas");
         })
         .catch((error) => {
+          this.$refs.alert.mostrarAlerta("danger", "warning", "Erro", "Erro ao cadastrar máquina!");
           console.error("Erro:", error);
         });
       this.$refs.form.reset();

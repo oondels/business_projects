@@ -1,7 +1,7 @@
 <template>
   <div class="d-flex flex-column align-items-center justify-content-center">
-    Aproxime se crachá!
-    <v-img :aspect-ratio="1" class="bg-white pulse" :src="nfcImage" width="300"></v-img>
+    Aproxime o crachá no leitor!
+    <v-img :aspect-ratio="1" class="pulse" :src="nfcImage" width="300"></v-img>
     <input id="nfc-input" placeholder="Insira" ref="nfcInput" type="text" v-model="nfcData" @keyup.enter="readNfcData" />
   </div>
 </template>
@@ -54,9 +54,8 @@ export default {
 }
 
 .pulse {
-  width: 100px;
-  height: 100px;
-  background-color: #3498db;
+  width: 150px;
+  height: 150px;
   border-radius: 50%;
   animation: pulse 2s infinite;
 }

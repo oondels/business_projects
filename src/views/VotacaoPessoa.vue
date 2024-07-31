@@ -4,57 +4,42 @@
 
     <div class="choices">
       <v-expansion-panels class="pa-4" variant="popout">
-        <v-expansion-panel v-for="(people, i) in peopleToVote" :key="i" hide-actions>
-          <v-expansion-panel-title>
-            <v-row align="center" class="spacer" no-gutters>
-              <v-col cols="3" md="1" sm="2">
-                <v-avatar size="60px">
-                  <v-img
-                    v-if="people.photo"
-                    alt="Avatar"
-                    src="https://avatars0.githubusercontent.com/u/9064066?v=4&s=460"
-                  ></v-img>
-                  <v-icon v-else :color="people.color" :icon="people.icon"></v-icon>
-                </v-avatar>
-              </v-col>
-
-              <v-col class="hidden-xs-only text-left ms-2" md="3" sm="5">
-                <strong v-html="people.name"></strong>
-              </v-col>
-
-              <v-col class="text-no-wrap text-left" cols="5" sm="3">
-                <strong v-html="people.setor"></strong>
-              </v-col>
-            </v-row>
+        <v-expansion-panel v-for="(people, peopleIndex) in candidates" :key="peopleIndex" hide-actions>
+          <v-expansion-panel-title class="candidate-info">
+            <div class="nome">{{ people.nome }}</div>
           </v-expansion-panel-title>
 
-          <v-expansion-panel-text>
-            <v-card-text
-              ><v-container>
-                <v-row justify="space-around">
-                  <v-col cols="12" md="6">
-                    <v-dialog transition="dialog-bottom-transition" width="auto">
-                      <template v-slot:activator="{ props: activatorProps }">
-                        <v-btn v-bind="activatorProps" text="Votar" block></v-btn>
-                      </template>
+          <v-expansion-panel-text class="bg-light">
+            <v-card-text>
+              <v-dialog transition="dialog-bottom-transition" width="auto">
+                <template v-slot:activator="{ props: activatorProps }">
+                  <div class="info-candidate d-flex flex-column justify-content-center align-items-center">
+                    <div>
+                      <h3>Informações</h3>
+                    </div>
+                    <div class="d-flex flex-column justify-content-center align-items-center">
+                      <p>Gerente: {{ people.gerente }}</p>
+                      <p>Setor:{{ people.nome_setor }}</p>
+                      <v-btn color="success" v-bind="activatorProps" text="Votar"></v-btn>
+                    </div>
+                  </div>
+                </template>
 
-                      <template v-slot:default="{ isActive }">
-                        <v-card>
-                          <v-toolbar :title="'Registrar voto para ' + people.name"></v-toolbar>
+                <template v-slot:default="{ isActive }">
+                  <v-card>
+                    <div class="text-capitalize p-3 bg-success">Registrar voto para: {{ people.nome }}</div>
 
-                          <v-card-text class="text-h4 pa-5">
-                            <NfcReader @nfcData="(nfcData) => readNfcData(nfcData, people.name)" />
+                    <v-card-text class="bg-light text-h4 pa-5">
+                      <NfcReader @nfcData="(nfcData) => validadeVote(nfcData, people)" />
 
-                            <v-card-actions class="justify-end">
-                              <v-btn style="opacity: 0" text="enviar" @click="isActive.value = false"></v-btn>
-                            </v-card-actions>
-                          </v-card-text>
-                        </v-card>
-                      </template>
-                    </v-dialog>
-                  </v-col>
-                </v-row> </v-container
-            ></v-card-text>
+                      <v-card-actions class="justify-end">
+                        <v-btn style="opacity: 0" text="enviar" @click="isActive.value = false"></v-btn>
+                      </v-card-actions>
+                    </v-card-text>
+                  </v-card>
+                </template>
+              </v-dialog>
+            </v-card-text>
           </v-expansion-panel-text>
         </v-expansion-panel>
       </v-expansion-panels>
@@ -64,10 +49,10 @@
 </template>
 
 <script>
-import NfcReader from "./components/NfcReader.vue";
 import axios from "axios";
 import ip from "../ip";
 import Alert from "./components/Alert.vue";
+import NfcReader from "./components/NfcReader.vue";
 
 export default {
   name: "VotacaoPessoa",
@@ -76,55 +61,69 @@ export default {
   data() {
     return {
       choiceVote: "",
-      peopleToVote: [
-        {
-          photo: "https://avatars0.githubusercontent.com/u/9064066?v=4&s=460",
-          name: "Maria Clara",
-          setor: "Montagem",
-          votes: 0,
-        },
-        {
-          photo: "https://avatars0.githubusercontent.com/u/9064066?v=4&s=460",
-          name: "Monica Leite",
-          setor: "Costura",
-          votes: 0,
-        },
-      ],
+      candidates: [],
     };
   },
 
-  methods: {
-    validateUser() {},
+  mounted() {
+    this.getCandidates();
+  },
 
-    readNfcData(data, choice) {
-      this.choiceVote = choice;
+  methods: {
+    getCandidates() {
       axios
-        .get(`http://${ip}:3043/post-choice`, { params: { userRfid: data } })
+        .get(`http://${ip}:3043/get-candidates`)
         .then((response) => {
-          this.$refs.alert.mostrarAlerta(
-            "success",
-            "fas fa-exclamation-triangle",
-            "Sucesso",
-            `Voto Computado para o funcionário ${choice}`
-          );
-          console.log("Dados enviados:", response.data);
+          this.candidates = response.data;
         })
         .catch((error) => {
-          this.$refs.alert.mostrarAlerta("warning", "fas fa-exclamation-triangle", "Erro", error.response.data);
+          console.log("Error:", error);
+        });
+    },
+
+    postVote(employeeVote, choice) {
+      const vote = {
+        employee: employeeVote,
+        choice: choice,
+      };
+
+      axios
+        .post(`http://${ip}:3043/post-vote`, vote)
+        .then(() => {
+          this.$refs.alert.mostrarAlerta("success", "done_outline", "Sucesso", `Voto Computado para: ${choice.nome}`);
+        })
+        .catch((error) => {
+          this.$refs.alert.mostrarAlerta("danger", "warning", "Erro", "Erro ao computar Voto!");
           console.error("Error:", error);
         });
     },
 
-    choiceEmployee(option) {
-      this.peopleToVote.forEach((people) => {
-        if (people.name === option) {
-          people.votes += 1;
-        }
-      });
-      console.log(this.peopleToVote);
+    validadeVote(data, choice) {
+      this.choiceVote = choice;
+      axios
+        .get(`http://${ip}:3043/validate-vote`, { params: { userRfid: data } })
+        .then((response) => {
+          this.postVote(response.data, choice);
+        })
+        .catch((error) => {
+          this.$refs.alert.mostrarAlerta("warning", "report", "Erro", error.response.data);
+          console.error("Error:", error);
+        });
     },
   },
 };
 </script>
 
-<style></style>
+<style>
+/* .info-candidate {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 10px;
+} */
+
+/* @media (max-width: 768px) {
+  .candidate-info {
+    grid-template-columns: 1fr;
+  }
+} */
+</style>
