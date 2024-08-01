@@ -17,7 +17,6 @@ import Refeitorio from "../views/Refeitorio.vue";
 import Reserva from "../views/Reserva.vue";
 import TemposMetodos from "../views/TemposMetodos.vue";
 
-import CadastroEleicao from "../views/CadastroEleicao.vue";
 import VotacaoPessoa from "../views/VotacaoPessoa.vue";
 
 import VueJwtDecode from "vue-jwt-decode";
@@ -161,12 +160,6 @@ const routes = [
     path: "/votacaoPessoa",
     name: "Votação",
     component: VotacaoPessoa,
-  },
-
-  {
-    path: "/cadastroEleicao",
-    name: "Cadastro Eleição",
-    component: CadastroEleicao,
   },
 ];
 

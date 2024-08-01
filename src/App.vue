@@ -1,12 +1,6 @@
 <template>
-  <sidenav
-    :custom_class="color"
-    :class="[isRTL ? 'fixed-end' : 'fixed-start']"
-    v-if="showSidenav"
-  />
-  <main
-    class="main-content position-relative max-height-vh-100 h-100 overflow-x-hidden"
-  >
+  <sidenav :custom_class="color" :class="[isRTL ? 'fixed-end' : 'fixed-start']" v-if="showSidenav" />
+  <main class="main-content position-relative max-height-vh-100 h-100 overflow-x-hidden">
     <!-- nav -->
     <navbar
       :class="[isNavFixed ? navbarFixed : '', isAbsolute ? absolute : '']"
@@ -16,10 +10,7 @@
     />
     <router-view />
     <app-footer v-show="showFooter" />
-    <configurator
-      :toggle="toggleConfigurator"
-      :class="[showConfig ? 'show' : '', hideConfigButton ? 'd-none' : '']"
-    />
+    <configurator :toggle="toggleConfigurator" :class="[showConfig ? 'show' : '', hideConfigButton ? 'd-none' : '']" />
   </main>
 </template>
 <script>

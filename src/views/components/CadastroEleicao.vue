@@ -33,10 +33,11 @@
 
 <script>
 import axios from "axios";
-import ip from "../ip";
-import Alert from "./components/Alert.vue";
+import ip from "../../ip";
+import Alert from "./Alert.vue";
 
 export default {
+  name: "CadastroEleicao",
   components: {
     Alert,
   },
@@ -109,7 +110,7 @@ export default {
       axios
         .post(`http://${ip}:3043/register-polling`, this.poll)
         .then((response) => {
-          this.$refs.alert.mostrarAlerta("success", "bi bi-exclamations", "Erro", response.data);
+          this.$refs.alert.mostrarAlerta("success", "bi bi-exclamations", "Sucesso", response.data);
         })
         .catch((error) => {
           console.error("Error:", error);
