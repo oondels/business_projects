@@ -16,12 +16,12 @@ app.post("/register-candidate", async (req, res) => {
   try {
     const candidateData = req.body;
 
-    if (!candidateData.registration) {
-      return res.status(400).json({ error: "Matrícula do Colaborador(a) não fornecido!" });
+    if (!candidateData.registration || typeof candidateData.registration !== "number") {
+      return res.status(400).json({ message: "Matrícula do Colaborador(a) não fornecido!" });
     }
 
     if (!candidateData.poll) {
-      return res.status(400).json({ error: "Competição não selecionado!" });
+      return res.status(400).json({ message: "Competição não selecionado!" });
     }
 
     const result = await pool.query(
@@ -32,23 +32,35 @@ app.post("/register-candidate", async (req, res) => {
       [candidateData.registration]
     );
 
-    if (!result || result.rows.length === 0) {
-      return res.status(404).send("eege(a) não Encontrado. \nVerifique a digitação do crachá!");
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Colaborador(a) não Encontrado. Verifique a digitação do crachá!" });
     }
 
     const queryEmployee = result.rows[0];
 
-    // const newCandidate = pool.query(
-    //   `
-    //     INSERT INTO votacao.candidatos (nome, matricula, gerente, nome_setor, eleicao_id, funcao) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
-    //   `,
-    //   [queryEmployee.nome, candidateData.matricula, queryEmployee.gerente, queryEmployee.nome_setor, candidateData.eleicao, queryEmployee.funcao]
-    // );
+    const registredEmployee = await pool.query(
+      `
+        SELECT * FROM votacao.candidatos
+        WHERE matricula = $1
+      `,
+      [candidateData.registration]
+    );
 
-    return res.status(200).send(`Matricula: ${queryEmployee.nome}`);
+    if (registredEmployee.rows.length > 0) {
+      return res.status(401).json({ message: "Colaborador(a) já esta registrado na competição." });
+    }
+
+    await pool.query(
+      `
+        INSERT INTO votacao.candidatos (nome, matricula, gerente, nome_setor, eleicao_id, funcao) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
+      `,
+      [queryEmployee.nome, candidateData.registration, queryEmployee.gerente, queryEmployee.nome_setor, candidateData.poll, queryEmployee.funcao]
+    );
+
+    return res.status(201).json({ message: `Cadastrado o colaborador(a): ${queryEmployee.nome}` });
   } catch (error) {
     console.error("Error:", error);
-    return res.status(500).send("Erro ao cadastrar Colaborador(a)");
+    return res.status(500).json({ message: "Erro ao cadastrar Colaborador(a)" });
   }
 });
 

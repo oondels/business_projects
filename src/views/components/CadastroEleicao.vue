@@ -1,31 +1,56 @@
 <template>
-  <div class="main">
+  <div class="cadastro-eleicao">
     <h4 class="d-flex flex-column align-items-center justify-content-center pb-4">Cadastro de Eleição para Votação</h4>
-    <v-sheet class="mx-auto" width="350">
-      <v-form ref="form">
-        <v-text-field v-model="poll.name" :rules="ruleName" label="Name" required></v-text-field>
-
-        <div class="date-pickers d-flex flex-column align-items-center justify-content-center">
-          <label for="dateofbirth">Data de Início</label>
+    <v-sheet max-width="500" height="auto">
+      <div class="p-4">
+        <v-form ref="form">
           <v-text-field
-            :rules="ruleMinDate"
-            :min="minDate"
-            type="date"
-            name="startDate"
-            id="startDate"
-            v-model="poll.startDate"
-          />
+            density="compact"
+            variant="outlined"
+            hide-details="auto"
+            v-model="poll.name"
+            :rules="ruleName"
+            label="Name"
+            required
+            class="mb-4"
+          ></v-text-field>
 
-          <label for="dateofbirth">Data de Fim</label>
-          <v-text-field :rules="ruleMinDate" :min="minDate" type="date" name="endDate" id="endDate" v-model="poll.endDate" />
-        </div>
+          <div class="date-pickers d-flex flex-column align-items-center justify-content-center">
+            <label for="dateofbirth">Data de Início</label>
+            <v-text-field
+              class="input"
+              :rules="ruleMinDate"
+              :min="minDate"
+              type="date"
+              name="startDate"
+              id="startDate"
+              v-model="poll.startDate"
+              density="compact"
+              variant="outlined"
+              hide-details="auto"
+            />
 
-        <div class="d-flex flex-column">
-          <v-btn class="mt-4" color="success" block @click="validate"> Cadastrar </v-btn>
+            <label for="dateofbirth">Data de Fim</label>
+            <v-text-field
+              density="compact"
+              variant="outlined"
+              hide-details="auto"
+              :rules="ruleMinDate"
+              :min="minDate"
+              type="date"
+              name="endDate"
+              id="endDate"
+              v-model="poll.endDate"
+            />
+          </div>
 
-          <v-btn class="mt-2" color="error" block @click="resetForm"> Reset Form </v-btn>
-        </div>
-      </v-form>
+          <div class="d-flex justify-content-center flex-column pb-5">
+            <v-btn class="mt-4" color="success" @click="validate"> Cadastrar </v-btn>
+
+            <v-btn class="mt-4" color="error" @click="resetForm"> Reset Form </v-btn>
+          </div>
+        </v-form>
+      </div>
     </v-sheet>
   </div>
   <alert ref="alert" />
@@ -125,15 +150,10 @@ export default {
 </script>
 
 <style>
-label {
-  display: block;
-}
-input {
-  border: 1px solid #c4c4c4;
+.input {
   border-radius: 5px;
   background-color: #fff;
+  padding: 10px;
   padding: 3px 5px;
-  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.1);
-  width: 190px;
 }
 </style>

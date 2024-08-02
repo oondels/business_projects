@@ -2,21 +2,17 @@
   <div class="main">
     <h2 class="text-center">Realize a votação dentre essas pessoas</h2>
 
-    <div v-if="autorization()">
+    <div class="cadastros">
       <CadastroEleicao />
-    </div>
-
-    <div>
       <CadastroCandidate />
     </div>
-
-    <div class="cadastro-candidate"></div>
 
     <div class="choices">
       <v-expansion-panels class="pa-4" variant="popout">
         <div v-if="candidates.length > 0">
           <v-expansion-panel v-for="(people, peopleIndex) in candidates" :key="peopleIndex" hide-actions>
-            <v-expansion-panel-title class="candidate-info">
+            <v-expansion-panel-title class="candidate-info d-flex flex-row align-items-center justify-content-between">
+              <div><v-img class="image-candidate" src="./img/foto_colaborador/favicon.png"></v-img></div>
               <div class="nome">{{ people.nome }}</div>
             </v-expansion-panel-title>
 
@@ -141,6 +137,13 @@ export default {
 </script>
 
 <style>
+.main {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100vh;
+}
+
 .info-candidate {
   background-color: #f9f9f9;
   border: 1px solid #ddd;
@@ -178,5 +181,61 @@ export default {
   font-size: 1em;
   padding: 10px 20px;
   border-radius: 4px;
+}
+
+.main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.cadastros {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  height: 80%;
+  width: 80%;
+  margin-bottom: 20px;
+  border-radius: 20px;
+  background-color: #f8f8f8;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.cadastro-eleicao,
+.cadastro-candidate {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 10px;
+  width: 45%;
+  text-align: center;
+}
+
+.image-candidate {
+  width: 36px;
+}
+
+.nome {
+  padding-left: 60px;
+}
+
+@media only screen and (max-width: 750px) {
+  .cadastros {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cadastro-eleicao,
+  .cadastro-candidate {
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+  }
 }
 </style>
