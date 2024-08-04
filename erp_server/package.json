@@ -16,7 +16,8 @@
     "manutencao": "nodemon src/manutencao.js",
     "build": "pm2 start index.js --name serverUnix pm2 start ferramentas_lean.js --name serverFerramentas",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "votacao": "nodemon src/votacao.js"
+    "votacao": "nodemon src/votacao.js",
+    "diesel": "nodemon src/dieselControl.js"
   },
   "keywords": [
     "start"
