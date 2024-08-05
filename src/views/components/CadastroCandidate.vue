@@ -92,11 +92,11 @@ export default {
       axios
         .post(`http://${ip}:3043/register-candidate`, this.candidateData)
         .then((response) => {
-          this.$refs.alert.mostrarAlerta("success", "done_outline", "Sucesso", response.data.message);
+          this.$refs.alert.mostrarAlerta("success", "done_outline", "Sucesso", response.data.result);
         })
         .catch((error) => {
-          console.error("Erro ao Cadastrar Colaborador(a):", error.response.data.message);
-          this.$refs.alert.mostrarAlerta("danger", "report", "Erro!", error.response.data.message);
+          console.error("Erro ao Cadastrar Colaborador(a):", error.response.data.result);
+          this.$refs.alert.mostrarAlerta("danger", "report", "Erro!", error.response.data.result);
         });
     },
   },

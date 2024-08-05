@@ -1,15 +1,16 @@
 import cors from "cors";
-import express, { query } from "express";
+import express from "express";
+import { ip } from "../ip.js";
 import { pool } from "./db.cjs";
 
 const app = express();
-const port = 3043;
 
+const port = 3043;
 app.use(cors());
 app.use(express.json());
 
-app.listen(port, () => {
-  console.log("Server listening on port:", port);
+app.listen(port, ip, () => {
+  console.log(`App listening on port ${port} at ip ${ip}`);
 });
 
 app.post("/register-candidate", async (req, res) => {
@@ -17,11 +18,11 @@ app.post("/register-candidate", async (req, res) => {
     const candidateData = req.body;
 
     if (!candidateData.registration || typeof candidateData.registration !== "number") {
-      return res.status(400).json({ message: "Matrícula do Colaborador(a) não fornecido!" });
+      return res.status(400).json({ result: "Matrícula do Colaborador(a) não fornecido!" });
     }
 
     if (!candidateData.poll) {
-      return res.status(400).json({ message: "Competição não selecionado!" });
+      return res.status(400).json({ result: "Competição não selecionado!" });
     }
 
     const result = await pool.query(
@@ -33,7 +34,7 @@ app.post("/register-candidate", async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Colaborador(a) não Encontrado. Verifique a digitação do crachá!" });
+      return res.status(404).json({ result: "Colaborador(a) não Encontrado. Verifique a digitação do crachá!" });
     }
 
     const queryEmployee = result.rows[0];
@@ -47,7 +48,7 @@ app.post("/register-candidate", async (req, res) => {
     );
 
     if (registredEmployee.rows.length > 0) {
-      return res.status(401).json({ message: "Colaborador(a) já esta registrado na competição." });
+      return res.status(401).json({ result: "Colaborador(a) já esta registrado na competição." });
     }
 
     await pool.query(
@@ -57,10 +58,10 @@ app.post("/register-candidate", async (req, res) => {
       [queryEmployee.nome, candidateData.registration, queryEmployee.gerente, queryEmployee.nome_setor, candidateData.poll, queryEmployee.funcao]
     );
 
-    return res.status(201).json({ message: `Cadastrado o colaborador(a): ${queryEmployee.nome}` });
+    return res.status(201).json({ result: `Cadastrado o colaborador(a): ${queryEmployee.nome}` });
   } catch (error) {
     console.error("Error:", error);
-    return res.status(500).json({ message: "Erro ao cadastrar Colaborador(a)" });
+    return res.status(500).json({ result: "Erro ao cadastrar Colaborador(a)" });
   }
 });
 
@@ -80,7 +81,7 @@ app.get("/get-polls", async (req, res) => {
 app.get("/get-candidates", async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT id, nome, gerente, nome_setor, eleicao_id
+      SELECT id, name, gerente, nome_setor, eleicao_id
         FROM votacao.candidatos;
       `);
 
@@ -181,4 +182,29 @@ app.post("/post-vote", async (req, res) => {
     console.log("Error:", error);
     res.status(500).send("Erro ao computar voto!");
   }
+});
+
+app.get("/get-votes", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        candidato.name as candidato_name,
+        eleicao.name as poll_name,
+        COUNT(v.id) as total_votos
+      FROM
+        votacao.votos v
+        JOIN votacao.candidatos candidato ON v.candidato_id = candidato.id
+        JOIN votacao.eleicoes eleicao ON v.eleicao_id = eleicao.id
+      GROUP BY
+        candidato.name,
+        eleicao.name
+      ORDER BY
+        eleicao.name,
+        total_votos DESC;
+      `);
+
+    const votes = result.rows;
+
+    res.status(201).json({ result: votes });
+  } catch (error) {}
 });

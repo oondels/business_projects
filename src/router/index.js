@@ -8,8 +8,6 @@ import SignUp from "../views/SignUp.vue";
 import FerramentasLean from "../views/FerramentasLean.vue";
 import Informativo from "../views/Informativo.vue";
 import InformativoResultado from "../views/InformativoResultado.vue";
-import Manutencao from "../views/Manutencao.vue";
-import NivelDiesel from "../views/NivelDiesel.vue";
 import PCP from "../views/PCP.vue";
 import Point from "../views/Point.vue";
 import Provisorio from "../views/Provisorio.vue";
@@ -17,6 +15,9 @@ import Quimico from "../views/Quimico.vue";
 import Refeitorio from "../views/Refeitorio.vue";
 import Reserva from "../views/Reserva.vue";
 import TemposMetodos from "../views/TemposMetodos.vue";
+
+import Manutencao from "../views/Manutencao.vue";
+import NivelDiesel from "../views/NivelDiesel.vue";
 
 import VotacaoPessoa from "../views/VotacaoPessoa.vue";
 
