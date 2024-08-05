@@ -9,6 +9,7 @@ import FerramentasLean from "../views/FerramentasLean.vue";
 import Informativo from "../views/Informativo.vue";
 import InformativoResultado from "../views/InformativoResultado.vue";
 import Manutencao from "../views/Manutencao.vue";
+import NivelDiesel from "../views/NivelDiesel.vue";
 import PCP from "../views/PCP.vue";
 import Point from "../views/Point.vue";
 import Provisorio from "../views/Provisorio.vue";
@@ -154,6 +155,12 @@ const routes = [
     path: "/manutencao",
     name: "Manutencao - TPM de Máquinas",
     component: Manutencao,
+  },
+
+  {
+    path: "/nivel-diesel",
+    name: "Nível de Diesel",
+    component: NivelDiesel,
   },
 
   {
