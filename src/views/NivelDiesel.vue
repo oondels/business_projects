@@ -1,6 +1,6 @@
 <template>
   <div class="d-flex flex-column align-items-center justify-content-center">
-    <h3>Nível de Diesel - DASS Santo Estêvão</h3>
+    <h3 class="text-primary">Acopanhamento Diesel - DASS Santo Estêvão</h3>
     <div class="container-diesel d-flex flex-column align-items-center justify-content-center">
       <div class="info-diesel">
         <div>
@@ -101,6 +101,15 @@ export default {
 </script>
 
 <style>
+/* @import url("@/assets/fonts/Poppins-Regular.ttf") format("truetype"); */
+
+@font-face {
+  font-family: "Poppins";
+  src: url("@/assets/fonts/Poppins-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+
 .gauge {
   margin: 1rem;
   font-size: 25px;
@@ -117,10 +126,11 @@ export default {
 
 .container-diesel {
   padding: 15px;
+  font-family: "Poppins", sans-serif;
 }
 
 .custom-svg {
-  height: 60px;
+  height: 70px;
 }
 
 .info-diesel {
@@ -131,9 +141,9 @@ export default {
   text-align: center;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border-radius: 30px;
-  padding: 10px;
+  /* padding: 10px; */
   width: auto;
-  height: 80px;
+  height: auto;
   margin-bottom: 20px;
 }
 </style>
