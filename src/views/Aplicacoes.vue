@@ -1,5 +1,8 @@
 <template>
-  <h6>Aplicações</h6>
+  <div class="title-aplicacoes">
+    <h6 class="mb-10">Aplicações</h6>
+  </div>
+
   <div class="mb-4 row col-12">
     <div class="col-4 mb-4">
       <a href="http://192.168.26.90/ambulatorios" target="_blank">
@@ -108,7 +111,11 @@
     </div>
   </div>
 
-  <h6 class="mb-6">Dashboards</h6>
+  <hr />
+
+  <div class="title-aplicacoes">
+    <h6 class="mb-10">Dashboards</h6>
+  </div>
   <div class="d-flex col-12">
     <lista-generica :items="items" />
   </div>
@@ -304,6 +311,10 @@ export default {
               link: "https://bi.grupodass.com.br/#/site/Operacoes/views/AnliseRetrabalho_17164841998980/RetrabalhosRFT?:iid=2",
             },
             {
+              nome: "Análise B-Grade e Perdas",
+              link: "https://bi.grupodass.com.br/#/site/Operacoes/views/AnliseBGradePerdasCalados2_0/AnliseQtdPerdasB-grade?:iid=2",
+            },
+            {
               nome: "Inbound Inspection Calçados",
               link: "https://bi.grupodass.com.br/#/site/Operacoes/views/InboundInspection/InboundCalados?:iid=1",
             },
@@ -311,10 +322,6 @@ export default {
             {
               nome: "KPIs Qualidade | Devolução",
               link: "https://lookerstudio.google.com/reporting/7e8d7fe2-48f9-4a0c-9f43-95ee8463f7a3",
-            },
-            {
-              nome: "Revisão Centro de Distribuição",
-              link: "https://lookerstudio.google.com/reporting/6f8dfa79-1de8-4cb7-88c2-741778269744",
             },
             { nome: "Revisão cabedal", link: "https://lookerstudio.google.com/reporting/437d4e7b-c7d5-44b8-9ced-49fe6252b4be" },
             { nome: "Tático", link: "https://lookerstudio.google.com/reporting/af7a7e72-07f5-4a80-97a0-27179e5df135" },
@@ -373,3 +380,17 @@ export default {
   },
 };
 </script>
+
+<style>
+.title-aplicacoes h6 {
+  font-size: 30px;
+  text-align: center;
+  border-bottom: 1px solid red;
+}
+
+.title-aplicacoes {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+</style>
