@@ -18,9 +18,11 @@ wss.on("connection", (ws) => {
   const sendDieselData = async () => {
     try {
       const query = await pool.query(`
-        SELECT * FROM manutencao.diesel ORDER BY id DESC LIMIT 1;
+        SELECT * FROM manutencao.diesel 
+        ORDER BY id DESC
+        LIMIT 5;
       `);
-      const result = query.rows[0];
+      const result = query.rows;
       ws.send(JSON.stringify(result));
     } catch (error) {
       console.error("Erro ao buscar dados!", error);
@@ -28,7 +30,7 @@ wss.on("connection", (ws) => {
   };
 
   // Enviar dados a cada 5 segundos
-  const intervalId = setInterval(sendDieselData, 5000);
+  const intervalId = setInterval(sendDieselData, 7000);
 
   // Limpar intervalo quando a conexão é fechada
   ws.on("close", () => {
@@ -39,10 +41,30 @@ wss.on("connection", (ws) => {
 
 app.post("/post-diesel", async (req, res) => {
   try {
-    // const result = await fetchLatestDieselData();
-    const { nivel, unidade_dass, distance } = req.body;
+    const { nivel, unidade_dass } = req.body;
 
-    const postDiesel = await pool.query(
+    const getDiesel = await pool.query(`
+        SELECT * FROM manutencao.diesel
+        ORDER BY id DESC
+        LIMIT 2;
+      `);
+
+    if (getDiesel.rows[1]) {
+      const lastMeasure = getDiesel.rows[1];
+      const threshold = parseFloat(lastMeasure.nivel) * 0.1;
+
+      if (nivel > parseFloat(lastMeasure.nivel) + parseFloat(threshold)) {
+        await pool.query(
+          `
+            INSERT INTO manutencao.abastecimento (quantidade, unidade_dass)
+            VALUES ($1, $2);
+          `,
+          [nivel - lastMeasure.nivel, unidade_dass]
+        );
+      }
+    }
+
+    await pool.query(
       `
         INSERT INTO manutencao.diesel (nivel, unidade_dass)
         VALUES ($1, $2);
@@ -55,6 +77,20 @@ app.post("/post-diesel", async (req, res) => {
     console.error("Error:", error);
     return res.status(500).json({ response: "Erro ao consultar dados" });
   }
+});
+
+app.get("/get-supplies", async (req, res) => {
+  try {
+    const query = await pool.query(`
+        SELECT * FROM manutencao.abastecimento
+        ORDER BY id DESC
+        LIMIT 5
+      `);
+
+    const result = query.rows;
+
+    return res.status(200).json({ response: result });
+  } catch (error) {}
 });
 
 server.listen(port, () => {
