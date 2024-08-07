@@ -53,7 +53,7 @@ app.post("/register-candidate", async (req, res) => {
 
     await pool.query(
       `
-        INSERT INTO votacao.candidatos (nome, matricula, gerente, nome_setor, eleicao_id, funcao) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
+        INSERT INTO votacao.candidatos (name, matricula, gerente, nome_setor, eleicao_id, funcao) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
       `,
       [queryEmployee.nome, candidateData.registration, queryEmployee.gerente, queryEmployee.nome_setor, candidateData.poll, queryEmployee.funcao]
     );
@@ -72,10 +72,12 @@ app.get("/get-polls", async (req, res) => {
       FROM votacao.eleicoes
       `);
 
-    const polls = [result.rows[0]];
+    const polls = [result.rows];
 
     res.status(200).json(polls);
-  } catch (error) {}
+  } catch (error) {
+    console.error("Erro ao buscar eleições: ", error);
+  }
 });
 
 app.get("/get-candidates", async (req, res) => {

@@ -21,16 +21,18 @@
             />
 
             <div class="polls-container">
-              <select
-                v-for="(poll, pollIndex) in polls"
-                :key="pollIndex"
-                v-model="candidateData.poll"
-                class="styled-select"
-                name="polls"
-                id="polls"
-              >
+              <select v-model="candidateData.poll" class="styled-select" name="polls" id="polls">
                 <option value="" disabled selected>Escolha uma Competiçao</option>
-                <option :value="poll.id">{{ poll.name }}</option>
+                <option
+                  v-for="(poll, pollIndex) in polls"
+                  :key="pollIndex"
+                  class="styled-select"
+                  name="polls"
+                  id="polls"
+                  :value="poll.id"
+                >
+                  {{ poll.name }}
+                </option>
               </select>
             </div>
           </div>
@@ -53,10 +55,15 @@ export default {
     Alert,
   },
 
+  props: {
+    polls: {
+      type: Object,
+      required: true,
+    },
+  },
+
   data() {
     return {
-      polls: [],
-
       candidateData: {
         registration: null,
         poll: "",
@@ -64,22 +71,7 @@ export default {
     };
   },
 
-  mounted() {
-    this.getPolls();
-  },
-
   methods: {
-    getPolls() {
-      axios
-        .get(`http://${ip}:3043/get-polls`)
-        .then((response) => {
-          this.polls = response.data;
-        })
-        .catch((error) => {
-          console.log("Error:", error);
-        });
-    },
-
     registerCandidate() {
       if (!this.candidateData.registration || !this.candidateData.poll) {
         return this.$refs.alert.mostrarAlerta("warning", "warning", "Aviso!", `Preencha todos os campos!`);

@@ -43,52 +43,55 @@
           <v-expansion-panel-text class="bg-light">
             <div class="cadastros">
               <CadastroEleicao />
-              <CadastroCandidate />
+              <CadastroCandidate :polls="polls" />
             </div>
           </v-expansion-panel-text>
         </v-expansion-panel>
       </v-expansion-panels>
     </div>
 
-    <div class="choices">
-      <v-expansion-panels class="pa-4" variant="popout">
-        <div v-if="candidates.length > 0">
-          <v-expansion-panel v-for="(people, peopleIndex) in candidates" :key="peopleIndex" hide-actions>
-            <v-expansion-panel-title class="candidate-info d-flex flex-row align-items-center justify-content-between">
-              <div><v-img class="image-candidate" src="./img/foto_colaborador/favicon.png"></v-img></div>
-              <div class="nome">{{ people.name }}</div>
-            </v-expansion-panel-title>
+    <div v-if="candidates.length > 0">
+      <div v-for="(poll, pollId) in polls" :key="pollId" class="choices">
+        <h4 class="text-center mt-8">{{ poll.name }}</h4>
+        <div v-for="(people, peopleIndex) in candidates" :key="peopleIndex">
+          <div v-if="people.eleicao_id === poll.id">
+            <v-expansion-panels class="pa-1">
+              <v-expansion-panel hide-actions>
+                <v-expansion-panel-title class="candidate-info d-flex flex-row align-items-center justify-content-between">
+                  <div><v-img class="image-candidate" src="./img/foto_colaborador/favicon.png"></v-img></div>
+                  <div class="nome">{{ people.name }}</div>
+                </v-expansion-panel-title>
+                <v-expansion-panel-text class="bg-light">
+                  <v-card-text>
+                    <v-dialog transition="dialog-bottom-transition" width="auto">
+                      <template v-slot:activator="{ props: activatorProps }">
+                        <div class="info-candidate">
+                          <div class="info-header">
+                            <h3>Informações</h3>
+                          </div>
+                          <div class="info-content">
+                            <p>Gerente: {{ people.gerente }}</p>
+                            <p>Setor:{{ people.nome_setor }}</p>
+                            <v-btn class="vote-btn" color="success" v-bind="activatorProps" text="Votar"></v-btn>
+                          </div>
+                        </div>
+                      </template>
 
-            <v-expansion-panel-text class="bg-light">
-              <v-card-text>
-                <v-dialog transition="dialog-bottom-transition" width="auto">
-                  <template v-slot:activator="{ props: activatorProps }">
-                    <div class="info-candidate">
-                      <div class="info-header">
-                        <h3>Informações</h3>
-                      </div>
-                      <div class="info-content">
-                        <p>Gerente: {{ people.gerente }}</p>
-                        <p>Setor:{{ people.nome_setor }}</p>
-                        <v-btn class="vote-btn" color="success" v-bind="activatorProps" text="Votar"></v-btn>
-                      </div>
-                    </div>
-                  </template>
+                      <v-card>
+                        <div class="text-capitalize p-3 bg-success">Registrar voto para: {{ people.name }}</div>
 
-                  <v-card>
-                    <div class="text-capitalize p-3 bg-success">Registrar voto para: {{ people.name }}</div>
-
-                    <v-card-text class="bg-light text-h4 pa-5">
-                      <NfcReader @nfcData="(nfcData) => validadeVote(nfcData, people)" />
-                    </v-card-text>
-                  </v-card>
-                </v-dialog>
-              </v-card-text>
-            </v-expansion-panel-text>
-          </v-expansion-panel>
+                        <v-card-text class="bg-light text-h4 pa-5">
+                          <NfcReader @nfcData="(nfcData) => validadeVote(nfcData, people)" />
+                        </v-card-text>
+                      </v-card>
+                    </v-dialog>
+                  </v-card-text>
+                </v-expansion-panel-text>
+              </v-expansion-panel>
+            </v-expansion-panels>
+          </div>
         </div>
-        <div v-else><h4>Sem candidatos cadastros para votação!</h4></div>
-      </v-expansion-panels>
+      </div>
     </div>
   </div>
   <alert ref="alert" />
@@ -112,12 +115,14 @@ export default {
       choiceVote: "",
       candidates: [],
       totalVotes: [],
+      polls: [],
     };
   },
 
   mounted() {
     this.getCandidates();
     this.voteRanking();
+    this.getPolls();
   },
 
   methods: {
@@ -126,6 +131,19 @@ export default {
         .get(`http://${ip}:3043/get-candidates`)
         .then((response) => {
           this.candidates = response.data;
+          console.log(this.candidates);
+        })
+        .catch((error) => {
+          console.log("Error:", error);
+        });
+    },
+
+    getPolls() {
+      axios
+        .get(`http://${ip}:3043/get-polls`)
+        .then((response) => {
+          this.polls = response.data[0];
+          console.log(this.polls);
         })
         .catch((error) => {
           console.log("Error:", error);
@@ -265,7 +283,7 @@ export default {
 .cadastro-candidate {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
   padding: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin: 10px;
@@ -290,6 +308,7 @@ export default {
   .cadastro-eleicao,
   .cadastro-candidate {
     width: 100%;
+    display: flex;
     justify-content: center;
     align-items: center;
   }
