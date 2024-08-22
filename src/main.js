@@ -6,6 +6,7 @@ import MaterialDashboard from "./material-dashboard";
 import router from "./router";
 import store from "./store";
 
+import "material-design-icons-iconfont/dist/material-design-icons.css";
 import "material-icons/iconfont/filled.css";
 import "material-icons/iconfont/material-icons.css";
 import "material-icons/iconfont/outlined.css";
