@@ -4,9 +4,10 @@
   </div>
 
   <div class="mb-4 row col-12">
-    <div class="col-4 mb-4">
+    <div class="col-4 mb-4 aplication-card">
+      <div class="aplication-title-card">Ambulatório</div>
       <a href="http://192.168.26.90/ambulatorios" target="_blank">
-        <v-card class="mx-auto" height="90" :image="ambulatorioImg" max-width="200" theme="light" title="Ambulatório"></v-card>
+        <img :src="ambulatorioImg" />
       </a>
     </div>
 
@@ -392,5 +393,23 @@ export default {
   width: 100%;
   display: flex;
   justify-content: center;
+}
+
+.aplication-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  background-color: #fff;
+  border-radius: 20px;
+  max-width: 220px;
+}
+
+.aplication-card:hover {
+  color: red;
+}
+
+.aplication-card img {
+  max-width: 100px;
 }
 </style>

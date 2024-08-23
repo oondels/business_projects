@@ -26,6 +26,8 @@ import BaixaProduto from "../views/BaixaProduto.vue";
 import DepartamentoPessoal from "../views/DepartamentoPessoal.vue";
 import Sorteio from "../views/Sorteio.vue";
 
+import NotFound from "../views/NotFound.vue";
+
 function decodeJwt() {
   let token = sessionStorage.getItem("token");
   if (token) {
@@ -168,6 +170,12 @@ const routes = [
     path: "/votacaoPessoa",
     name: "Votação",
     component: VotacaoPessoa,
+  },
+
+  {
+    path: "/:catchAll(.*)",
+    name: "NotFound",
+    component: NotFound,
   },
 ];
 

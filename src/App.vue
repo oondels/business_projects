@@ -14,11 +14,11 @@
   </main>
 </template>
 <script>
-import Sidenav from "./examples/Sidenav";
 import Configurator from "@/examples/Configurator.vue";
-import Navbar from "@/examples/Navbars/Navbar.vue";
 import AppFooter from "@/examples/Footer.vue";
+import Navbar from "@/examples/Navbars/Navbar.vue";
 import { mapMutations, mapState } from "vuex";
+import Sidenav from "./examples/Sidenav";
 
 export default {
   name: "App",
@@ -57,3 +57,5 @@ export default {
   },
 };
 </script>
+
+<style></style>
