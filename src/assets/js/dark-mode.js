@@ -5,21 +5,20 @@ export function activateDarkMode() {
   const hr = document.querySelectorAll("div:not(.sidenav) > hr");
   const hr_card = document.querySelectorAll("div:not(.bg-gradient-dark) hr");
   const text_btn = document.querySelectorAll("button:not(.btn) > .text-dark");
-  const text_span = document.querySelectorAll(
-    "span.text-dark, .breadcrumb .text-dark",
-  );
+  const text_span = document.querySelectorAll("span.text-dark, .breadcrumb .text-dark");
   const text_strong = document.querySelectorAll("strong.text-dark");
   const text_nav_link = document.querySelectorAll("a.nav-link.text-dark");
   const secondary = document.querySelectorAll(".text-secondary");
   const bg_gray_100 = document.querySelectorAll(".bg-gray-100");
-  const btn_text_dark = document.querySelectorAll(
-    ".btn.btn-link.text-dark, .material-icons.text-dark",
-  );
+  const btn_text_dark = document.querySelectorAll(".btn.btn-link.text-dark, .material-icons.text-dark");
   const card_border = document.querySelectorAll(".card.border");
-  const mainContent_blur = document.querySelectorAll(
-    ".main-content .container-fluid .card",
-  );
+  const mainContent_blur = document.querySelectorAll(".main-content .container-fluid .card");
   const svg = document.querySelectorAll("g");
+  const cardApp = document.querySelectorAll(".aplication-card a");
+
+  cardApp.forEach((card) => {
+    card.classList.add("dark");
+  });
 
   body.classList.add("dark-version");
   for (var i = 0; i < hr.length; i++) {
@@ -95,25 +94,23 @@ export function deactivateDarkMode() {
   const hr = document.querySelectorAll("div:not(.sidenav) > hr");
   const hr_card = document.querySelectorAll("div:not(.bg-gradient-dark) hr");
   const text_btn = document.querySelectorAll("button:not(.btn) > .text-dark");
-  const text_span_white = document.querySelectorAll(
-    "span.text-white, .breadcrumb .text-white",
-  );
+  const text_span_white = document.querySelectorAll("span.text-white, .breadcrumb .text-white");
   const text_strong_white = document.querySelectorAll("strong.text-white");
-  const text_nav_link_white = document.querySelectorAll(
-    "a.nav-link.text-white",
-  );
+  const text_nav_link_white = document.querySelectorAll("a.nav-link.text-white");
   const secondary = document.querySelectorAll(".text-secondary");
   const bg_gray_600 = document.querySelectorAll(".bg-gray-600");
-  const btn_text_white = document.querySelectorAll(
-    ".btn.btn-link.text-white, .material-icons.text-white",
-  );
-  const card_border_dark = document.querySelectorAll(
-    ".card.border.border-dark",
-  );
-  const mainContent_blur = document.querySelectorAll(
-    ".main-content .container-fluid .card",
-  );
+  const btn_text_white = document.querySelectorAll(".btn.btn-link.text-white, .material-icons.text-white");
+  const card_border_dark = document.querySelectorAll(".card.border.border-dark");
+  const mainContent_blur = document.querySelectorAll(".main-content .container-fluid .card");
   const svg = document.querySelectorAll("g");
+  const cardApp = document.querySelectorAll(".aplication-card a");
+
+  cardApp.forEach((card) => {
+    if (card.classList.contains("dark")) {
+      card.classList.remove("dark");
+      // card.classList.add("dark");
+    }
+  });
 
   body.classList.remove("dark-version");
 
@@ -156,10 +153,7 @@ export function deactivateDarkMode() {
     }
   }
   for (var i = 0; i < text_nav_link_white.length; i++) {
-    if (
-      text_nav_link_white[i].classList.contains("text-white") &&
-      !text_nav_link_white[i].closest(".sidenav")
-    ) {
+    if (text_nav_link_white[i].classList.contains("text-white") && !text_nav_link_white[i].closest(".sidenav")) {
       text_nav_link_white[i].classList.remove("text-white");
       text_nav_link_white[i].classList.add("text-dark");
     }

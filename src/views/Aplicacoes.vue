@@ -5,97 +5,145 @@
 
   <div class="mb-4 row col-12">
     <div class="col-4 mb-4 aplication-card">
-      <div class="aplication-title-card">Ambulatório</div>
-      <a href="http://192.168.26.90/ambulatorios" target="_blank">
-        <img :src="ambulatorioImg" />
+      <a
+        class="ambulatorio"
+        @mouseover.self="addHover"
+        @mouseleave.self="removeHover"
+        href="http://192.168.26.90/ambulatorios"
+        target="_blank"
+      >
+        <span class="aplication-title-card">
+          Ambulatório
+          <img :src="ambulatorioImg" />
+        </span>
       </a>
     </div>
 
-    <div class="col-4 mb-4" v-if="construcao()">
-      <router-link to="/baixa-produto">
-        <v-card class="mx-auto" height="90" :image="baixaProdutoImg" max-width="200" theme="light" title="Baixa produto"></v-card>
+    <div class="col-4 mb-4 aplication-card">
+      <router-link class="ferramentas-lean" @mouseover.self="addHover" @mouseleave.self="removeHover" to="/ferramentas-lean">
+        <span class="aplication-title-card">
+          Ferramentas Lean
+          <img :src="ferramentasleanImg" />
+        </span>
       </router-link>
     </div>
 
-    <div class="col-4 mb-4">
-      <router-link to="/ferramentas-lean">
-        <v-card
-          class="mx-auto"
-          height="90"
-          :image="ferramentasleanImg"
-          max-width="200"
-          theme="light"
-          title="Ferramentas Lean"
-        ></v-card>
+    <div class="col-4 mb-4 aplication-card" v-if="construcao()">
+      <router-link
+        class="baixaProduto"
+        @mouseover.self="addHover"
+        @mouseleave.self="removeHover"
+        to="/baixa-produto"
+        target="_blank"
+      >
+        <span class="aplication-title-card">
+          Baixa Produto
+          <img :src="baixaProdutoImg" />
+        </span>
       </router-link>
     </div>
 
-    <div class="col-4 mb-4">
-      <a href="http://192.168.26.90/producao/consulta" target="_blank">
-        <v-card class="mx-auto" height="90" :image="gerenciamentoImg" max-width="200" theme="light" title="Gerenciamento">
-        </v-card>
+    <div class="col-4 mb-4 aplication-card">
+      <a
+        class="gerenciamento"
+        @mouseover.self="addHover"
+        @mouseleave.self="removeHover"
+        href="http://192.168.26.90/producao/consulta"
+        target="_blank"
+      >
+        <span class="aplication-title-card">
+          Gerenciamento
+          <img :src="gerenciamentoImg" />
+        </span>
       </a>
     </div>
 
-    <div class="col-4 mb-4" v-if="permissaoPcp()">
-      <router-link to="/pcp">
-        <v-card class="mx-auto" :image="pcpImg" height="90" max-width="200" theme="light" title="PCP"></v-card>
+    <div class="col-4 mb-4 aplication-card">
+      <router-link to="/pcp" class="pcp" @mouseover.self="addHover" @mouseleave.self="removeHover">
+        <span class="aplication-title-card">
+          PCP
+          <img :src="pcpImg" />
+        </span>
       </router-link>
     </div>
 
-    <div class="col-4 mb-4">
-      <router-link to="/manutencao">
-        <v-card
-          class="mx-auto"
-          height="90"
-          :image="manutencaoImg"
-          max-width="200"
-          theme="light"
-          title="Manual de Máquinas"
-        ></v-card>
+    <div class="col-4 mb-4 aplication-card">
+      <router-link to="/manutencao" class="manutencao" @mouseover.self="addHover" @mouseleave.self="removeHover">
+        <span class="aplication-title-card">
+          Manual de Máquinas
+          <img :src="manutencaoImg" />
+        </span>
       </router-link>
     </div>
 
-    <div class="col-4 mb-4">
-      <a href="http://192.168.26.90/pense&aja/" target="_blank">
-        <v-card class="mx-auto" height="90" :image="penseajaImg" max-width="200" theme="light" title="Pense & Aja"></v-card>
+    <div class="col-4 mb-4 aplication-card">
+      <a
+        href="http://192.168.26.90/pense&aja/"
+        target="_blank"
+        class="penseAja"
+        @mouseover.self="addHover"
+        @mouseleave.self="removeHover"
+      >
+        <span class="aplication-title-card">
+          Pense & Aja
+          <img :src="currentPenseAjaImage" />
+        </span>
       </a>
     </div>
 
-    <div class="col-4 mb-4">
-      <a href="http://192.168.26.90/producao" target="_blank">
-        <v-card class="mx-auto" height="90" :image="previsaoImg" max-width="200" theme="light" title="Previsão"></v-card>
+    <div class="col-4 mb-4 aplication-card">
+      <a
+        href="http://192.168.26.90/producao"
+        target="_blank"
+        class="previsao"
+        @mouseover.self="addHover"
+        @mouseleave.self="removeHover"
+      >
+        <span class="aplication-title-card">
+          Previsão
+          <img :src="previsaoImg" />
+        </span>
       </a>
     </div>
 
-    <div class="col-4 mb-4" v-if="permissaoDP()">
-      <router-link to="/departamento-pessoal">
-        <v-card
-          class="mx-auto"
-          :image="provisorioImg"
-          height="90"
-          max-width="200"
-          theme="light"
-          title="Departamento Pessoal"
-        ></v-card>
+    <div class="col-4 mb-4 aplication-card">
+      <router-link to="/quimico" class="quimico" @mouseover.self="addHover" @mouseleave.self="removeHover">
+        <span class="aplication-title-card">
+          Químico
+          <img :src="quimicoImg" />
+        </span>
       </router-link>
     </div>
 
-    <div class="col-4 mb-4">
-      <router-link to="/quimico">
-        <v-card class="mx-auto" :image="quimicoImg" height="90" max-width="200" theme="light" title="Químico"></v-card>
+    <div class="col-4 mb-4 aplication-card" v-if="permissaoDP()">
+      <router-link
+        to="/departamento-pessoal"
+        class="departamento-pessoal"
+        @mouseover.self="addHover"
+        @mouseleave.self="removeHover"
+      >
+        <span class="aplication-title-card">
+          Departamento Pessoal
+          <img :src="provisorioImg" />
+        </span>
       </router-link>
     </div>
 
-    <div class="col-4 mb-4">
-      <router-link to="/refeitorio">
-        <v-card class="mx-auto" :image="refeitorioImg" height="90" max-width="200" theme="light" title="Refeitório"></v-card>
+    <div class="col-4 mb-4 aplication-card">
+      <router-link to="/refeitorio" class="refeitorio" @mouseover.self="addHover" @mouseleave.self="removeHover">
+        <span class="aplication-title-card">
+          Refeitório
+          <img :src="refeitorioImg" />
+        </span>
       </router-link>
     </div>
 
-    <div class="col-4 mb-4">
-      <a href="http://10.100.1.43:3000" target="_blank"
-        ><v-card class="mx-auto" height="90" :image="seasonImg" max-width="200" theme="light" title="Season"></v-card>
+    <div class="col-4 mb-4 aplication-card">
+      <a href="http://10.100.1.43:3000" target="_blank" class="season" @mouseover.self="addHover" @mouseleave.self="removeHover">
+        <span class="aplication-title-card">
+          Season
+          <img :src="seasonImg" />
+        </span>
       </a>
     </div>
 
@@ -130,6 +178,7 @@ import gerenciamentoImg from "../../public/img/aplicacoes/gerenciamento.png";
 import manutencaoImg from "../../public/img/aplicacoes/manutencao.png";
 import pcpImg from "../../public/img/aplicacoes/pcp.png";
 import penseajaImg from "../../public/img/aplicacoes/penseaja.png";
+import penseajaImgActive from "../../public/img/aplicacoes/penseAjaActive.png";
 import previsaoImg from "../../public/img/aplicacoes/previsao.png";
 import provisorioImg from "../../public/img/aplicacoes/provisorio.png";
 import quimicoImg from "../../public/img/aplicacoes/quimico.png";
@@ -153,6 +202,26 @@ export default {
   },
 
   methods: {
+    addHover(e) {
+      const className = e.target.classList[0];
+      const appElement = document.querySelector(`.${className}`);
+      appElement.classList.add("hover");
+
+      if (className === "penseAja") {
+        this.currentPenseAjaImage = penseajaImgActive;
+      }
+    },
+
+    removeHover(e) {
+      const className = e.target.classList[0];
+      const appElement = document.querySelector(`.${className}`);
+      appElement.classList.remove("hover");
+
+      if (className === "penseAja") {
+        this.currentPenseAjaImage = penseajaImg;
+      }
+    },
+
     decodeJwt() {
       let token = sessionStorage.getItem("token");
       if (token) {
@@ -208,6 +277,9 @@ export default {
 
   data() {
     return {
+      onHover: false,
+      currentPenseAjaImage: penseajaImg,
+
       ambulatorioImg: ambulatorioImg,
       baixaProdutoImg: baixaProdutoImg,
       gerenciamentoImg: gerenciamentoImg,
@@ -399,17 +471,78 @@ export default {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
   text-align: center;
-  background-color: #fff;
-  border-radius: 20px;
-  max-width: 220px;
 }
 
-.aplication-card:hover {
+.aplication-card a {
+  box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+  background-color: #fff;
+  border-radius: 20px;
+  width: 220px;
+  height: 90px;
+  padding: 5px;
+  transition:
+    background-color 0.8s ease,
+    color 0.8s ease;
+}
+
+.aplication-card a span {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.aplication-card a:hover {
+  box-shadow: rgba(100, 100, 111, 0.1) 0px 7px 29px 0px;
+  background-color: rgba(255, 255, 255, 0.8);
   color: red;
 }
 
 .aplication-card img {
-  max-width: 100px;
+  margin-left: 5px;
+  max-width: 80px;
+  transition: transform 0.5s ease;
+}
+
+.aplication-card .hover img {
+  transform: scale(1.05);
+}
+
+.dark {
+  background-color: rgb(47, 47, 47) !important;
+}
+
+@media screen and (max-width: 880px) {
+  .aplication-card a {
+    font-size: 14px;
+    max-width: 190px;
+    height: 80px;
+    padding: 5px;
+  }
+
+  .aplication-card img {
+    width: 60px;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .aplication-card a {
+    font-size: 12px;
+    max-width: 120px;
+    height: 90px;
+  }
+
+  .aplication-card img {
+    width: 50px;
+  }
+
+  .aplication-card a span {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+  }
 }
 </style>
