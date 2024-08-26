@@ -1,6 +1,6 @@
 <template>
   <div class="title-aplicacoes">
-    <h6 class="mb-10">Aplicações</h6>
+    <h6 class="mb-4">Aplicações</h6>
   </div>
 
   <div class="mb-4 row col-12">
@@ -163,7 +163,7 @@
   <hr />
 
   <div class="title-aplicacoes">
-    <h6 class="mb-10">Dashboards</h6>
+    <h6 class="mb-4">Dashboards</h6>
   </div>
   <div class="d-flex col-12">
     <lista-generica :items="items" />
@@ -479,9 +479,9 @@ export default {
   box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
   background-color: #fff;
   border-radius: 20px;
-  width: 220px;
-  height: 90px;
-  padding: 5px;
+  width: 235px;
+  height: 95px;
+  padding: 10px;
   transition:
     background-color 0.8s ease,
     color 0.8s ease;

@@ -1,6 +1,6 @@
 import cors from "cors";
 import express from "express";
-import { ip } from "../ip.js";
+import apiBaseUrl from "../ip.js";
 import { pool } from "./db.cjs";
 
 const app = express();
@@ -9,7 +9,7 @@ const port = 3042;
 app.use(cors());
 app.use(express.json());
 
-app.listen(port, ip, () => console.log(`App listening on port ${port} at ${ip}`));
+app.listen(port, () => console.log(`App listening on port ${port} on ip ${apiBaseUrl}`));
 
 app.get("/", (req, res) => {
   res.send("Hello World");
@@ -18,6 +18,7 @@ app.get("/", (req, res) => {
 app.get("/api/manual_maqs", async (req, res) => {
   try {
     const { filtro } = req.query;
+
     const params = [];
 
     let manualMaquinas = {};
@@ -50,6 +51,7 @@ app.get("/api/manual_maqs", async (req, res) => {
 
     if (filtro && filtro.tipo) {
       query += ` AND p.tipo = $${params.length + 1} `;
+
       params.push(filtro.tipo);
     }
 

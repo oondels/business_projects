@@ -5,7 +5,7 @@ import { pool } from "./db.cjs";
 
 const app = express();
 
-const port = 3043;
+const port = 3070;
 app.use(cors());
 app.use(express.json());
 

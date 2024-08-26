@@ -24,6 +24,9 @@ app.use(express.json());
 
 const port = 3050;
 
+console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+console.log(`IP: ${process.env.IP}`);
+
 app.get("/", (req, res) => {
   res.send("Hello World");
 });
