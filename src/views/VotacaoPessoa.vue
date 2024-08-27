@@ -128,10 +128,9 @@ export default {
   methods: {
     getCandidates() {
       axios
-        .get(`http://${ip}:3043/get-candidates`)
+        .get(`http://${ip}:3070/get-candidates`)
         .then((response) => {
           this.candidates = response.data;
-          console.log(this.candidates);
         })
         .catch((error) => {
           console.log("Error:", error);
@@ -140,10 +139,9 @@ export default {
 
     getPolls() {
       axios
-        .get(`http://${ip}:3043/get-polls`)
+        .get(`http://${ip}:3070/get-polls`)
         .then((response) => {
           this.polls = response.data[0];
-          console.log(this.polls);
         })
         .catch((error) => {
           console.log("Error:", error);
@@ -157,7 +155,7 @@ export default {
       };
 
       axios
-        .post(`http://${ip}:3043/post-vote`, vote)
+        .post(`http://${ip}:3070/post-vote`, vote)
         .then(() => {
           this.$refs.alert.mostrarAlerta("success", "done_outline", "Sucesso", `Voto Computado para: ${choice.name}`);
         })
@@ -170,7 +168,7 @@ export default {
     validadeVote(data, choice) {
       this.choiceVote = choice;
       axios
-        .get(`http://${ip}:3043/validate-vote`, { params: { userRfid: data } })
+        .get(`http://${ip}:3070/validate-vote`, { params: { userRfid: data } })
         .then((response) => {
           this.postVote(response.data, choice);
         })
@@ -182,7 +180,7 @@ export default {
 
     voteRanking() {
       axios
-        .get(`http://${ip}:3043/get-votes`)
+        .get(`http://${ip}:3070/get-votes`)
         .then((response) => {
           this.totalVotes = response.data.result;
         })

@@ -1,6 +1,6 @@
 import cors from "cors";
 import express from "express";
-import apiBaseUrl from "../ip.js";
+import { ip } from "../ip.js";
 import { pool } from "./db.cjs";
 
 const app = express();
@@ -9,7 +9,7 @@ const port = 3042;
 app.use(cors());
 app.use(express.json());
 
-app.listen(port, () => console.log(`App listening on port ${port} on ip ${apiBaseUrl}`));
+app.listen(port, () => console.log(`App listening on port ${port} on ip ${ip}`));
 
 app.get("/", (req, res) => {
   res.send("Hello World");

@@ -82,7 +82,7 @@ export default {
       }
 
       axios
-        .post(`http://${ip}:3043/register-candidate`, this.candidateData)
+        .post(`http://${ip}:3070/register-candidate`, this.candidateData)
         .then((response) => {
           this.$refs.alert.mostrarAlerta("success", "done_outline", "Sucesso", response.data.result);
         })
