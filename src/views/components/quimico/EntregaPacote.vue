@@ -113,10 +113,10 @@
 
 <script>
 import axios from "axios";
-import ip from "../../../ip";
-import VueJwtDecode from "vue-jwt-decode";
-import Alert from "../Alert.vue";
 import { format } from "date-fns";
+import VueJwtDecode from "vue-jwt-decode";
+import ip from "../../../ip";
+import Alert from "../Alert.vue";
 
 export default {
   name: "entrega-pacote",
@@ -203,6 +203,10 @@ export default {
           let Hora = data.getHours();
           let minutos = data.getMinutes();
 
+          let dataAtual = `${dia}/${mes}/${ano}`;
+
+          console.log(dataAtual);
+
           link.setAttribute("download", `solicitacoes ${dia}-${mes}-${ano} ${Hora}:${minutos}.xlsx`);
           document.body.appendChild(link);
           link.click();
@@ -217,6 +221,13 @@ export default {
       if (!Array.isArray(this.abastecimentos)) {
         this.abastecimentos = [];
       }
+
+      let data = new Date();
+      let dia = String(data.getDate()).padStart(2, "0");
+      let mes = String(data.getMonth() + 1).padStart(2, "0");
+      let ano = data.getFullYear();
+
+      let dataAtual = `${dia}/${mes}/${ano}`;
 
       let produto = this.abastecimentos.find((p) => p.id === produtoId && p.solicitacaoId === solicitacaoId);
       if (!produto) {
@@ -240,6 +251,7 @@ export default {
               abastecedor: this.decodeJwt().usuario,
               celula: solicitacao.celula,
               mes: new Date().getMonth() + 1,
+              data: dataAtual,
               modelo: solicitacao.modelo,
               processo: solicitacao.processo,
               gerente: solicitacao.gerente,

@@ -14,7 +14,9 @@
       <edicao-produto v-if="permissoes()" />
 
       <autorizar-cracha v-if="permissoes()" />
+    </div>
 
+    <div class="m-0 mb-4 row">
       <editar-modelo v-if="permissoes()" />
     </div>
 
@@ -229,15 +231,15 @@
 <script>
 import VueJwtDecode from "vue-jwt-decode";
 import Alert from "./components/Alert.vue";
-import CadastroModelo from "./components/quimico/CadastroModelo.vue";
-import SolicitacaoIndividual from "./components/quimico/SolicitacaoIndividual.vue";
-import EntregaPacote from "./components/quimico/EntregaPacote.vue";
-import EntregaIndividual from "./components/quimico/EntregaIndividual.vue";
-import SolicitacaoPacote from "./components/quimico/SolicitacaoPacote.vue";
-import EdicaoProduto from "./components/quimico/EdicaoProduto.vue";
 import AbastecimentoRecorrente from "./components/quimico/AbastecimentoRecorrente.vue";
 import AutorizarCracha from "./components/quimico/AutorizarCracha.vue";
+import CadastroModelo from "./components/quimico/CadastroModelo.vue";
+import EdicaoProduto from "./components/quimico/EdicaoProduto.vue";
 import EditarModelo from "./components/quimico/EditarModelo.vue";
+import EntregaIndividual from "./components/quimico/EntregaIndividual.vue";
+import EntregaPacote from "./components/quimico/EntregaPacote.vue";
+import SolicitacaoIndividual from "./components/quimico/SolicitacaoIndividual.vue";
+import SolicitacaoPacote from "./components/quimico/SolicitacaoPacote.vue";
 
 import GradientLineChart from "@/examples/Charts/GradientLineChart.vue";
 

@@ -14,8 +14,14 @@
     </template>
     <template v-slot:default="{ isActive }">
       <v-card>
-        <v-card-title class="text-center border-bottom position-sticky fixed-top border-bottom bg-white">
+        <v-card-title
+          class="text-center title-edit-model border-bottom position-sticky fixed-top border-bottom bg-white d-flex flex-direction-row justify-content-between align-items-start"
+        >
           <h3>Alteração de Modelo</h3>
+          <Help
+            title="Informação!"
+            message="A alteração direta do modelo irá deletar os produtos relacionados ao mesmo e substituir pelos novos cadastrados. Se preferir editar um produto em específico no modelo, vá para a edição direta do produto!"
+          />
         </v-card-title>
 
         <v-card-item>
@@ -70,11 +76,7 @@
             </div>
 
             <div class="col-4">
-              <v-text-field
-                type="number"
-                label="Quantidade de recipientes"
-                v-model="newModelo.produto.recipientes"
-              ></v-text-field>
+              <v-text-field type="number" label="Quantidade de recipientes" v-model="produto.recipientes"></v-text-field>
             </div>
           </div>
         </v-card-item>
@@ -95,11 +97,16 @@
       </v-card>
     </template>
   </v-dialog>
+
+  <alert ref="alert" />
 </template>
 
 <script>
 import axios from "axios";
+import VueJwtDecode from "vue-jwt-decode";
+import Help from "../../../components/Help.vue";
 import ip from "../../../ip";
+import Alert from "../Alert.vue";
 import MiniStatisticsCard from "../MiniStatisticsCard.vue";
 
 export default {
@@ -107,6 +114,8 @@ export default {
 
   components: {
     MiniStatisticsCard,
+    Alert,
+    Help,
   },
 
   data() {
@@ -136,9 +145,16 @@ export default {
   },
 
   methods: {
+    decodeJwt() {
+      let token = sessionStorage.getItem("token");
+      if (token) {
+        return VueJwtDecode.decode(token);
+      }
+    },
+
     getModelosCadastrados() {
       axios
-        .get(`http://${ip}:3045/buscaModelosCadastrados`, { processo: "Montagem" })
+        .get(`http://${ip}:3045/buscaModelosCadastrados`)
         .then((response) => {
           response.data.forEach((data) => {
             this.modelosCadastrados.push({
@@ -154,12 +170,30 @@ export default {
 
     editarModelo() {
       axios
-        .put(`http://${ip}:3045/atualizar-modelo`, this.newModelo)
+        .put(`http://${ip}:3045/atualizar-modelo`, {
+          newModelo: this.newModelo,
+          usuario: this.decodeJwt().usuario,
+        })
         .then((response) => {
-          console.log(response.data);
+          this.newModelo = {
+            modeloSelecionado: null,
+            modelo: "",
+            processo: "",
+            marca: "",
+            produto: [
+              {
+                produto: "",
+                consumoPrevio: "",
+                precoKg: "",
+                base: "",
+                recipientes: "",
+              },
+            ],
+          };
+          return this.$refs.alert.mostrarAlerta("success", "done_outline", "Sucesso", response.data.message);
         })
         .catch((error) => {
-          console.error("Erro no servidor: ", error);
+          return this.$refs.alert.mostrarAlerta("warning", "warning", "Erro", error.response.data.message);
         });
     },
 
@@ -180,4 +214,9 @@ export default {
 };
 </script>
 
-<style></style>
+<style>
+.title-edit-model i {
+  cursor: pointer;
+  color: #dc2466;
+}
+</style>
