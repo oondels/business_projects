@@ -72,7 +72,7 @@ app.post("/cadastrarModelo", async (req, res) => {
 
       for (const produto of produtos) {
         if (!produto.produto || !produto.consumoPrevio || !produto.precoKg || !produto.base || !produto.recipientes) {
-          return res.status(422).send("Todos os dados do produto não foram preenchidos!");
+          return res.status(422).send("É necessário preencher todos os dados!");
         }
 
         await client.query(
@@ -110,8 +110,47 @@ app.post("/cadastrarModelo", async (req, res) => {
 
 app.put("/atualizar-modelo", async (req, res) => {
   try {
-    const newModelo = req.body;
-    // console.log(newModelo);
+    const { newModelo, usuario } = req.body;
+
+    if (!usuario) {
+      return res.status(422).send("Você precisa realizar o login primeiro!");
+    }
+
+    await pool.query(
+      `
+        DELETE FROM quimico.produtos
+        WHERE id_modelo = $1
+      `,
+      [newModelo.modeloSelecionado]
+    );
+
+    for (const p of newModelo.produto) {
+      if (!p.produto || !p.consumoPrevio || !p.precoKg || !p.base || !p.recipientes) {
+        return res.status(422).json({ message: "É necessário preencher todos os dados do(s) produto(s)!" });
+      }
+
+      const novosProdutos = await pool.query(
+        `
+          INSERT INTO quimico.produtos (produto, consumo_previo, preco_kg, base, recipientes, createdate, usuariocreate, id_modelo, modelo, processo)
+          VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7, $8, $9)
+        `,
+        [
+          p.produto.toUpperCase(),
+          p.consumoPrevio,
+          p.precoKg,
+          p.base.toUpperCase(),
+          p.recipientes,
+          usuario.toUpperCase(),
+          newModelo.modeloSelecionado,
+          newModelo.modelo.toUpperCase(),
+          newModelo.processo.toUpperCase(),
+        ]
+      );
+
+      if (novosProdutos.rowCount === 0) {
+        return res.status(400).json({ message: "Erro ao alterar o(s) produto(s)." });
+      }
+    }
 
     const modeloSelecionado = await pool.query(
       `
@@ -121,19 +160,26 @@ app.put("/atualizar-modelo", async (req, res) => {
       [newModelo.modeloSelecionado]
     );
 
-    if (!modeloSelecionado.rows.length > 0) {
+    if (modeloSelecionado.rows.length === 0) {
       return res.status.json({ message: "Modelo não Encontrado." });
     }
 
-    // Continuar daqui
+    if (!newModelo.modelo || !newModelo.processo || !newModelo.marca) {
+      return res.status(422).json({ message: "É necessário preencher todos os dados do modelo!" });
+    }
+
     const alterarModelo = await pool.query(
       `
-        ALTER TABLE quimico.modelo
-        WHERE id = $1
-        SET 
+        UPDATE quimico.modelo
+        SET modelo = $1, processo = $2, marca = $3
+        WHERE id = $4
       `,
-      [newModelo.modeloSelecionado]
+      [newModelo.modelo, newModelo.processo, newModelo.marca, newModelo.modeloSelecionado]
     );
+
+    if (alterarModelo.rowCount == 0) {
+      return res.status(404).json({ message: "Não foi possível alterar o modelo. Não Encontrado" });
+    }
 
     res.status(200).json({ message: "Modelo alterado com sucesso" });
   } catch (error) {
@@ -508,12 +554,14 @@ app.get("/buscaDadosProdutos", async (req, res) => {
     const params = [];
     const produtos = [];
 
+    // Continuar daqui -> Pegar a data atual (abastecimento_item->>'data')::int AS data,
     let baseQuery = `
         WITH pacotes_aggregated AS (
             SELECT 
                 qp.id AS produto_id,
                 qp.produto,
                 (abastecimento_item->>'mes')::int AS mes,
+             
                 SUM((abastecimento_item->>'Final')::numeric) AS total_produtivo,
                 SUM((abastecimento_item->>'Resíduo')::numeric) AS total_residuo,
                 qp.preco_kg
@@ -631,14 +679,15 @@ app.get("/buscaDadosProdutos", async (req, res) => {
 
       return dadosGrafico;
     };
-
+    console.log(buscaDados.rows);
     const graficoTotalProdutivoResiduoKG = montaGrafico(
       buscaDados.rows,
       "Consumo: Produtivo x Resíduo",
       "total_produtivo",
       "total_residuo",
       "Produtivo(Kg)",
-      "Resíduo(Kg)"
+      "Resíduo(Kg)",
+      "Data"
     );
     const graficoTotalProdutivoResiduoRS = montaGrafico(
       buscaDados.rows,
@@ -646,7 +695,8 @@ app.get("/buscaDadosProdutos", async (req, res) => {
       "total_gasto_produtivo",
       "total_gasto_residuo",
       "Produtivo(R$)",
-      "Resíduo(R$)"
+      "Resíduo(R$)",
+      "Data"
     );
     const graficoTotalConsumoGasto = montaGrafico(
       buscaDados.rows,
@@ -654,7 +704,8 @@ app.get("/buscaDadosProdutos", async (req, res) => {
       "total_gasto",
       "total_consumido",
       "Gasto(R$)",
-      "Consumido(Kg)"
+      "Consumido(Kg)",
+      "Data"
     );
 
     return res.json({
