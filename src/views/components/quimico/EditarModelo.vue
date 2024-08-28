@@ -21,7 +21,19 @@
         <v-card-item>
           <div class="col-12 row mb-2">
             <div class="col-4">
-              <v-select :items="modelosCadastrados" v-model="modeloSelecionado" label="Modelo"></v-select>
+              <select class="styled-select" name="modelo" id="modelo" v-model="newModelo.modeloSelecionado">
+                <option name="modelo" value="" disabled selected>Escolha um Modelo</option>
+                <option
+                  v-for="(modelo, modeloId) in modelosCadastrados"
+                  :key="modeloId"
+                  class="styled-select"
+                  name="modelo"
+                  id="modelo"
+                  :value="modelo.id"
+                >
+                  {{ modelo.modelo }}
+                </option>
+              </select>
             </div>
 
             <div class="col-4">
@@ -35,27 +47,26 @@
                 v-model="newModelo.processo"
               ></v-select>
             </div>
-          </div>
-          <div class="col-12 row mb-2">
+
             <div class="col-4">
               <v-select :items="['Fila', 'Nike']" label="Marca" v-model="newModelo.marca"></v-select>
             </div>
-
-            <div class="col-4">
-              <v-text-field type="text" label="Nome do produto" v-model="newModelo.produto.produto"></v-text-field>
-            </div>
-
-            <div class="col-4">
-              <v-text-field type="number" label="Consumo prévio" v-model="newModelo.produto.consumoPrevio"></v-text-field>
-            </div>
           </div>
-          <div class="col-12 row mb-2">
+          <div v-for="(produto, produtoIndex) in newModelo.produto" :key="produtoIndex" class="col-12 row mb-2">
             <div class="col-4">
-              <v-text-field type="number" label="Preço por KG" v-model="newModelo.produto.precoKg"></v-text-field>
+              <v-text-field type="text" label="Nome do produto" v-model="produto.produto"></v-text-field>
             </div>
 
             <div class="col-4">
-              <v-select :items="['Água', 'Solvente']" label="Base do produto" v-model="newModelo.produto.base"></v-select>
+              <v-text-field type="number" label="Consumo prévio" v-model="produto.consumoPrevio"></v-text-field>
+            </div>
+
+            <div class="col-4">
+              <v-text-field type="number" label="Preço por KG" v-model="produto.precoKg"></v-text-field>
+            </div>
+
+            <div class="col-4">
+              <v-select :items="['Água', 'Solvente']" label="Base do produto" v-model="produto.base"></v-select>
             </div>
 
             <div class="col-4">
@@ -70,7 +81,14 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="info" variant="elevated" text="Adicionar Produto"></v-btn>
+          <v-btn color="info" variant="elevated" text="Adicionar Produto" @click="adicionarProduto"></v-btn>
+          <v-btn
+            v-if="newModelo.produto.length > 1"
+            color="danger mr-4"
+            variant="tonal"
+            text="Remover Produto"
+            @click="removerProduto"
+          ></v-btn>
           <v-btn color="danger" text="Fechar" variant="tonal" @click="isActive.value = false"></v-btn>
           <v-btn color="success" text="Salvar" variant="tonal" @click="editarModelo"></v-btn>
         </v-card-actions>
@@ -80,9 +98,9 @@
 </template>
 
 <script>
-import MiniStatisticsCard from "../MiniStatisticsCard.vue";
 import axios from "axios";
 import ip from "../../../ip";
+import MiniStatisticsCard from "../MiniStatisticsCard.vue";
 
 export default {
   name: "EditarModelo",
@@ -94,24 +112,27 @@ export default {
   data() {
     return {
       modelosCadastrados: [],
-      modeloSelecionado: null,
       newModelo: {
+        modeloSelecionado: null,
         modelo: "",
         processo: "",
         marca: "",
-        produto: {
-          produto: "",
-          consumoPrevio: "",
-          precoKg: "",
-          base: "",
-          recipientes: "",
-        },
+        produto: [
+          {
+            produto: "",
+            consumoPrevio: "",
+            precoKg: "",
+            base: "",
+            recipientes: "",
+          },
+        ],
       },
     };
   },
 
   mounted() {
     this.getModelosCadastrados();
+    console.log(this.modelosCadastrados);
   },
 
   methods: {
@@ -120,7 +141,10 @@ export default {
         .get(`http://${ip}:3045/buscaModelosCadastrados`, { processo: "Montagem" })
         .then((response) => {
           response.data.forEach((data) => {
-            this.modelosCadastrados.push(data.modelo);
+            this.modelosCadastrados.push({
+              id: data.id,
+              modelo: data.modelo,
+            });
           });
         })
         .catch((error) => {
@@ -137,6 +161,20 @@ export default {
         .catch((error) => {
           console.error("Erro no servidor: ", error);
         });
+    },
+
+    adicionarProduto() {
+      this.newModelo.produto.push({
+        produto: "",
+        consumoPrevio: "",
+        precoKg: 0,
+        base: "",
+        recipientes: 0,
+      });
+    },
+
+    removerProduto() {
+      this.newModelo.produto.pop();
     },
   },
 };

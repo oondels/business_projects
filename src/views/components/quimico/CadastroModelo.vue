@@ -55,6 +55,14 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="info" variant="elevated" text="Adicionar produto" @click="adicionarProduto"></v-btn>
+          <v-btn
+            v-if="produtos.length > 1"
+            color="danger"
+            variant="tonal"
+            text="Remover produto"
+            @click="removerProduto"
+            class="mr-4"
+          ></v-btn>
           <v-btn color="danger" variant="tonal" text="Fechar" @click="isActive.value = false"></v-btn>
           <v-btn color="success" variant="tonal" text="Salvar" @click="cadastrarModelo"></v-btn>
         </v-card-actions>
@@ -67,10 +75,10 @@
 
 <script>
 import axios from "axios";
-import MiniStatisticsCard from "../MiniStatisticsCard.vue";
-import ip from "../../../ip";
 import VueJwtDecode from "vue-jwt-decode";
+import ip from "../../../ip";
 import Alert from "../Alert.vue";
+import MiniStatisticsCard from "../MiniStatisticsCard.vue";
 
 export default {
   name: "CadastroModelo",
@@ -108,6 +116,10 @@ export default {
         base: "",
         recipientes: 0,
       });
+    },
+
+    removerProduto() {
+      this.produtos.pop();
     },
 
     cadastrarModelo() {

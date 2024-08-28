@@ -49,7 +49,7 @@ app.post("/cadastrarModelo", async (req, res) => {
     }
 
     if (!modelo.modelo || !modelo.processo || !modelo.marca) {
-      return res.status(422).send("Todos os dados do modelo não foram preenchidos!");
+      return res.status(422).send("É necessário preencher todos os dados!");
     }
 
     const verificaModelo = await client.query(`SELECT modelo FROM quimico.modelo WHERE modelo = $1 AND processo = $2`, [
@@ -111,7 +111,30 @@ app.post("/cadastrarModelo", async (req, res) => {
 app.put("/atualizar-modelo", async (req, res) => {
   try {
     const newModelo = req.body;
-    console.log(newModelo);
+    // console.log(newModelo);
+
+    const modeloSelecionado = await pool.query(
+      `
+      SELECT * FROM quimico.modelo
+      WHERE id = $1
+      `,
+      [newModelo.modeloSelecionado]
+    );
+
+    if (!modeloSelecionado.rows.length > 0) {
+      return res.status.json({ message: "Modelo não Encontrado." });
+    }
+
+    // Continuar daqui
+    const alterarModelo = await pool.query(
+      `
+        ALTER TABLE quimico.modelo
+        WHERE id = $1
+        SET 
+      `,
+      [newModelo.modeloSelecionado]
+    );
+
     res.status(200).json({ message: "Modelo alterado com sucesso" });
   } catch (error) {
     console.error("Erro no servidor: ", error);
