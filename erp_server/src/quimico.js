@@ -554,7 +554,6 @@ app.get("/buscaDadosProdutos", async (req, res) => {
     const params = [];
     const produtos = [];
 
-    // Continuar daqui -> Pegar a data atual (abastecimento_item->>'data')::int AS data,
     let baseQuery = `
         WITH pacotes_aggregated AS (
             SELECT 
@@ -581,8 +580,8 @@ app.get("/buscaDadosProdutos", async (req, res) => {
     }
 
     baseQuery += `
-            GROUP BY 
-                qp.id, qp.produto, mes, qp.preco_kg
+        GROUP BY 
+            qp.id, qp.produto, mes, qp.preco_kg
         ),
         individuais_aggregated AS (
             SELECT 
@@ -679,7 +678,7 @@ app.get("/buscaDadosProdutos", async (req, res) => {
 
       return dadosGrafico;
     };
-    console.log(buscaDados.rows);
+
     const graficoTotalProdutivoResiduoKG = montaGrafico(
       buscaDados.rows,
       "Consumo: Produtivo x Resíduo",
@@ -717,6 +716,117 @@ app.get("/buscaDadosProdutos", async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).send("Erro interno do servidor");
+  }
+});
+
+app.get("/getProductHistory", async (req, res) => {
+  try {
+    const productData = req.query;
+    const params = [];
+    const produtos = [];
+
+    let query = `
+      WITH pacotes_aggregated AS (
+        SELECT 
+            qp.id AS produto_id,
+            qp.produto,
+            (abastecimento_item->>'data')::timestamp AS data,
+            (abastecimento_item->>'Final')::numeric AS produtivo,
+            (abastecimento_item->>'Resíduo')::numeric AS residuo,
+            qp.preco_kg
+        FROM 
+            quimico.produtos qp
+        JOIN 
+            quimico.solicitacoes_pacotes sp ON true
+        JOIN 
+            jsonb_array_elements(sp.abastecimento) AS abastecimento_item
+            ON (abastecimento_item->>'id')::int = qp.id
+        WHERE 
+            EXTRACT(YEAR FROM sp.createdate) = EXTRACT(YEAR FROM CURRENT_DATE) AND sp.cancelado = false`;
+
+    if (productData.individual && productData.individual.titulo && productData.individual.titulo !== "produto") {
+      query += ` AND sp.${productData.individual.titulo} = $${params.length + 1} `;
+      params.push(productData.individual.valor);
+    }
+
+    query += `
+      GROUP BY 
+            data, qp.id, qp.produto, produtivo, residuo
+        ),
+
+      individuais_aggregated AS (
+            SELECT 
+                qp.id AS produto_id,
+                qp.produto,
+                si.abastecido AS produtivo,
+                si.residuo AS residuo,
+                qp.preco_kg
+            FROM 
+                quimico.produtos qp
+            JOIN 
+                quimico.solicitacoes_individuais si ON si.id_produto = qp.id
+            WHERE 
+                EXTRACT(YEAR FROM si.createdate) = EXTRACT(YEAR FROM CURRENT_DATE)
+    `;
+
+    if (productData.individual && (productData.individual.titulo === "gerente" || productData.individual.titulo === "produto")) {
+      query += ` AND si.${productData.individual.titulo} = $${params.length + 1} `;
+      params.push(productData.individual.valor);
+    }
+
+    query += `
+      GROUP BY 
+            qp.id, qp.produto, produtivo, residuo
+        ),
+      combined_aggregated AS (
+            SELECT 
+                COALESCE(pa.produto_id, ia.produto_id) AS produto_id,
+                COALESCE(pa.produto, ia.produto) AS produto,
+                COALESCE(pa.data) AS data,
+                COALESCE(pa.produtivo, 0) + COALESCE(ia.produtivo, 0) AS produtivo,
+                COALESCE(pa.residuo, 0) + COALESCE(ia.residuo, 0) AS residuo,
+                COALESCE(pa.preco_kg, ia.preco_kg) AS preco_kg
+            FROM 
+                pacotes_aggregated pa
+            FULL OUTER JOIN 
+                individuais_aggregated ia
+            ON 
+                pa.produto_id = ia.produto_id
+        )
+        SELECT 
+            produto,
+            data,
+            produtivo AS total_consumido,
+            produtivo - residuo AS produtivo,
+            residuo,
+            produtivo * preco_kg AS total_gasto,
+            (produtivo - residuo) * preco_kg AS total_gasto_produtivo,
+            residuo * preco_kg AS total_gasto_residuo
+        FROM 
+            combined_aggregated 
+        WHERE 
+            1 = 1
+    `;
+
+    if (productData.produto) {
+      query += ` AND produto = $${params.length + 1} `;
+      params.push(productData.produto);
+    }
+
+    query += `
+      ORDER BY 
+          produto, data;
+    `;
+
+    const buscaDados = await pool.query(query, params);
+
+    buscaDados.rows.sort((a, b) => {
+      a - b;
+    });
+
+    res.status(200).json({ productHistory: buscaDados.rows });
+  } catch (error) {
+    console.error("Erro ao consultar banco de dados: ", error);
   }
 });
 
