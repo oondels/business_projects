@@ -26,53 +26,60 @@
   </div>
 
   <div class="container-fluid">
-    <div class="col-12 row p-0 m-0 mb-2">
+    <div class="col-18 row p-0 m-0 mb-2 align-items-center">
       <h5 class="col-6">Medidores de performance</h5>
 
-      <div class="col-6 row">
-        <v-select
-          density="compact"
-          class="col-4 text-black"
-          variant="outlined"
-          :items="['', 'Fabrica', 'Gerente', 'Marca', 'Modelo', 'Processo']"
-          return-object
-          item-title="titulo"
-          item-value="consulta"
-          label="Filtro Categoria"
-          v-model="categoriaSelecionada"
-          @update:modelValue="
-            filtrosPerformance(categoriaSelecionada, (individualSelecionado = ''), (produtoSelecionado = ''));
-            buscaFiltrosIndividuais(categoriaSelecionada);
-          "
-        ></v-select>
+      <div class="col-12 row">
+        <!-- v-if="(categoriaSelecionada, individualSelecionado, produtoSelecionado)" -->
+        <div class="col-4 ml-5 show-more-chemistry d-flex align-items-center">
+          <DetailedChart :productData="productData" />
+        </div>
 
-        <v-select
-          density="compact"
-          class="col-4 text-black"
-          variant="outlined"
-          :disabled="!individual"
-          :items="individual"
-          return-object
-          item-title="valor"
-          item-value="titulo"
-          v-model="individualSelecionado"
-          @update:modelValue="filtrosPerformance(categoriaSelecionada, individualSelecionado, produtoSelecionado)"
-          label="Filtro Individual"
-        ></v-select>
+        <div class="col-8 row">
+          <v-select
+            density="compact"
+            class="col-4 text-black"
+            variant="outlined"
+            :items="['', 'Fabrica', 'Gerente', 'Marca', 'Modelo', 'Processo']"
+            return-object
+            item-title="titulo"
+            item-value="consulta"
+            label="Filtro Categoria"
+            v-model="categoriaSelecionada"
+            @update:modelValue="
+              filtrosPerformance(categoriaSelecionada, (individualSelecionado = ''), (produtoSelecionado = ''));
+              buscaFiltrosIndividuais(categoriaSelecionada);
+            "
+          ></v-select>
 
-        <v-select
-          density="compact"
-          class="col-4 text-black"
-          variant="outlined"
-          :disabled="!individual"
-          :items="produtos"
-          return-object
-          item-title="valor"
-          item-value="titulo"
-          v-model="produtoSelecionado"
-          @update:modelValue="filtrosPerformance(categoriaSelecionada, individualSelecionado, produtoSelecionado)"
-          label="Filtro Produto"
-        ></v-select>
+          <v-select
+            density="compact"
+            class="col-4 text-black"
+            variant="outlined"
+            :disabled="!individual"
+            :items="individual"
+            return-object
+            item-title="valor"
+            item-value="titulo"
+            v-model="individualSelecionado"
+            @update:modelValue="filtrosPerformance(categoriaSelecionada, individualSelecionado, produtoSelecionado)"
+            label="Filtro Individual"
+          ></v-select>
+
+          <v-select
+            density="compact"
+            class="col-4 text-black"
+            variant="outlined"
+            :disabled="!individual"
+            :items="produtos"
+            return-object
+            item-title="valor"
+            item-value="titulo"
+            v-model="produtoSelecionado"
+            @update:modelValue="filtrosPerformance(categoriaSelecionada, individualSelecionado, produtoSelecionado)"
+            label="Filtro Produto"
+          ></v-select>
+        </div>
       </div>
     </div>
 
@@ -234,6 +241,7 @@ import Alert from "./components/Alert.vue";
 import AbastecimentoRecorrente from "./components/quimico/AbastecimentoRecorrente.vue";
 import AutorizarCracha from "./components/quimico/AutorizarCracha.vue";
 import CadastroModelo from "./components/quimico/CadastroModelo.vue";
+import DetailedChart from "./components/quimico/DetailedChart.vue";
 import EdicaoProduto from "./components/quimico/EdicaoProduto.vue";
 import EditarModelo from "./components/quimico/EditarModelo.vue";
 import EntregaIndividual from "./components/quimico/EntregaIndividual.vue";
@@ -253,12 +261,36 @@ export default {
     return {
       resultadoProcesso: [],
 
+      showDetailChartButton: false,
       mostrarGrafico: false,
       mostraSolicitacoes: false,
 
       graficoTotalProdutivoResiduoKG: {},
       graficoTotalProdutivoResiduoRS: {},
       graficoTotalConsumoGasto: {},
+
+      productData: {},
+
+      detailedChartItems: {
+        options: {
+          chart: {
+            id: "",
+          },
+          xaxis: {
+            categories: [],
+          },
+          title: {
+            text: "",
+          },
+        },
+
+        series: [
+          {
+            name: "",
+            data: [],
+          },
+        ],
+      },
 
       individual: [],
       produtos: [],
@@ -320,6 +352,14 @@ export default {
     filtrosPerformance(categoria, individual, produto) {
       this.descricaoPerformance = `${categoria} ${individual.valor ? individual.valor : ""}`;
       this.buscarDadosProdutos(categoria, individual, produto);
+
+      if ((categoria, individual, produto)) {
+        this.productData = {
+          categoria: categoria,
+          individual: individual,
+          produto: produto,
+        };
+      }
     },
 
     buscaTodasSolicitacoes() {
@@ -404,6 +444,7 @@ export default {
     EdicaoProduto,
     AbastecimentoRecorrente,
     EditarModelo,
+    DetailedChart,
   },
 };
 </script>

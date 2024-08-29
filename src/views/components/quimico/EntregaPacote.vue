@@ -223,11 +223,11 @@ export default {
       }
 
       let data = new Date();
-      let dia = String(data.getDate()).padStart(2, "0");
-      let mes = String(data.getMonth() + 1).padStart(2, "0");
-      let ano = data.getFullYear();
+      // let dia = String(data.getDate()).padStart(2, "0");
+      // let mes = String(data.getMonth() + 1).padStart(2, "0");
+      // let ano = data.getFullYear();
 
-      let dataAtual = `${dia}/${mes}/${ano}`;
+      // let dataAtual = `${dia}/${mes}/${ano}`;
 
       let produto = this.abastecimentos.find((p) => p.id === produtoId && p.solicitacaoId === solicitacaoId);
       if (!produto) {
@@ -250,8 +250,8 @@ export default {
               Resíduo: null,
               abastecedor: this.decodeJwt().usuario,
               celula: solicitacao.celula,
-              mes: new Date().getMonth() + 1,
-              data: dataAtual,
+              mes: data.getMonth() + 1,
+              data: data,
               modelo: solicitacao.modelo,
               processo: solicitacao.processo,
               gerente: solicitacao.gerente,

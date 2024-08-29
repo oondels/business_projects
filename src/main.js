@@ -1,4 +1,6 @@
+import "@mdi/font/css/materialdesignicons.css";
 import { createApp } from "vue";
+import VueApexCharts from "vue3-apexcharts";
 import App from "./App.vue";
 import "./assets/css/main.css";
 import "./assets/css/nucleo-icons.css";
@@ -29,4 +31,5 @@ appInstance.use(vuetify);
 appInstance.use(store);
 appInstance.use(router);
 appInstance.use(MaterialDashboard);
+appInstance.use(VueApexCharts);
 appInstance.mount("#app");
