@@ -9,8 +9,13 @@ import ApexCharts from "vue3-apexcharts";
 
 export default {
   props: {
-    data: {
+    options: {
       type: Object,
+      required: true,
+    },
+
+    series: {
+      type: Array,
       required: true,
     },
   },
@@ -19,20 +24,12 @@ export default {
     ApexCharts,
   },
 
-  mounted() {
-    this.test();
-  },
-
-  methods: {
-    test() {
-      console.log(this.data);
-    },
-  },
+  methods: {},
 
   data() {
     return {
-      chartOptions: this.data.options,
-      chartSeries: this.data.series,
+      chartOptions: this.options,
+      chartSeries: this.series,
     };
   },
 };

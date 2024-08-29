@@ -203,9 +203,7 @@ export default {
           let Hora = data.getHours();
           let minutos = data.getMinutes();
 
-          let dataAtual = `${dia}/${mes}/${ano}`;
-
-          console.log(dataAtual);
+          // let dataAtual = `${dia}/${mes}/${ano}`;
 
           link.setAttribute("download", `solicitacoes ${dia}-${mes}-${ano} ${Hora}:${minutos}.xlsx`);
           document.body.appendChild(link);

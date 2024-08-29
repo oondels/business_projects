@@ -141,7 +141,6 @@ export default {
 
   mounted() {
     this.getModelosCadastrados();
-    console.log(this.modelosCadastrados);
   },
 
   methods: {
