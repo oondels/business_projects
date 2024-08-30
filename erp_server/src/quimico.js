@@ -255,7 +255,12 @@ app.post("/salvarSolicitacaoPacote", async (req, res) => {
     }
 
     const verificaModelo = await pool.query(
-      `SELECT modelo FROM quimico.solicitacoes_pacotes WHERE id_modelo = $1 AND entregue = false AND createdate::date = CURRENT_DATE AND celula = $2;`,
+      `SELECT modelo
+      FROM quimico.solicitacoes_pacotes 
+      WHERE id_modelo = $1 
+        AND entregue = false 
+        AND createdate::date = CURRENT_DATE AND celula = $2 
+        AND cancelado = false;`,
       [solicitacao.idModelo, solicitacao.celula]
     );
 
@@ -723,7 +728,6 @@ app.get("/getProductHistory", async (req, res) => {
   try {
     const productData = req.query;
     const params = [];
-    const produtos = [];
 
     let query = `
       WITH pacotes_aggregated AS (
@@ -820,11 +824,146 @@ app.get("/getProductHistory", async (req, res) => {
 
     const buscaDados = await pool.query(query, params);
 
-    buscaDados.rows.sort((a, b) => {
+    const result = buscaDados.rows;
+
+    result.sort((a, b) => {
       a - b;
     });
 
-    res.status(200).json({ productHistory: buscaDados.rows });
+    let totalRsKg = {
+      options: {
+        chart: {
+          id: "",
+        },
+
+        stroke: {
+          width: 5,
+          curve: "smooth",
+        },
+
+        xaxis: {
+          categories: [],
+        },
+      },
+
+      series: [
+        {
+          name: "Gasto (R$)",
+          data: [],
+        },
+        {
+          name: "Consumido (Kg)",
+          data: [],
+        },
+      ],
+    };
+
+    let totalKg = {
+      options: {
+        chart: {
+          id: "",
+        },
+
+        stroke: {
+          width: 5,
+          curve: "smooth",
+        },
+
+        xaxis: {
+          categories: [],
+        },
+      },
+
+      series: [
+        {
+          name: "Produtivo (Kg)",
+          data: [],
+        },
+        {
+          name: "Resíduo (Kg)",
+          data: [],
+        },
+      ],
+    };
+
+    let totalRs = {
+      options: {
+        chart: {
+          id: "",
+        },
+
+        stroke: {
+          width: 5,
+          curve: "smooth",
+        },
+
+        xaxis: {
+          categories: [],
+        },
+      },
+
+      series: [
+        {
+          name: "Produtivo (R$)",
+          data: [],
+        },
+        {
+          name: "Resíduo (R$)",
+          data: [],
+        },
+      ],
+    };
+
+    let chartTitle = "";
+    result.forEach((product) => {
+      let date = new Date(product.data);
+      chartTitle = product.produto;
+
+      let day = String(date.getDate()).padStart(2, "0");
+      let month = String(date.getMonth() + 1).padStart(2, "0");
+      let year = date.getFullYear();
+      let formatted = `${day}/${month}/${year}`;
+
+      let hours = String(date.getHours()).padStart(2, "0");
+      let minutes = String(date.getMinutes()).padStart(2, "0");
+      let seconds = String(date.getSeconds()).padStart(2, "0");
+      let formattedTime = `${hours}:${minutes}:${seconds}`;
+
+      let formattedDate = formatted + "-" + formattedTime;
+
+      // Total Gasto X Total Consumido
+      totalRsKg.options.chart.id = product.produto;
+      totalRsKg.options.xaxis.categories.push(formattedDate);
+      totalRsKg.series[0].data.push(product.total_gasto);
+
+      totalRsKg.options.chart.id = product.produto;
+      totalRsKg.options.xaxis.categories.push(formattedDate);
+      totalRsKg.series[1].data.push(product.total_consumido);
+
+      // Total Gasto Kg - Residuo X Produtivo
+      totalKg.options.chart.id = product.produto;
+      totalKg.options.xaxis.categories.push(formattedDate);
+      totalKg.series[0].data.push(product.produtivo);
+
+      totalKg.options.chart.id = product.produto;
+      totalKg.series[1].data.push(product.residuo);
+
+      // Total Gasto R$ - Residuo X Produtivo
+      totalRs.options.chart.id = product.produto;
+      totalRs.options.xaxis.categories.push(formattedDate);
+      totalRs.series[0].data.push(product.total_gasto_produtivo);
+
+      totalRs.options.chart.id = product.produto;
+      totalRs.series[1].data.push(product.total_gasto_residuo);
+    });
+
+    res.status(200).json({
+      totalRs: totalRs,
+      totalKg: totalKg,
+      totalRsKg: totalRsKg,
+      chartTitle: chartTitle,
+      chartModel: productData.individual.valor,
+    });
   } catch (error) {
     console.error("Erro ao consultar banco de dados: ", error);
   }
