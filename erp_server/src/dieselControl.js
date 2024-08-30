@@ -62,6 +62,16 @@ app.post("/post-diesel", async (req, res) => {
           [nivel - lastMeasure.nivel, unidade_dass]
         );
       }
+
+      if (nivel < parseFloat(lastMeasure.nivel) - parseFloat(threshold)) {
+        await pool.query(
+          `
+            INSERT INTO manutencao.consumo_diesel (saida, unidade_dass)
+            VALUES ($1, $2);
+          `,
+          [lastMeasure.nivel - nivel, unidade_dass]
+        );
+      }
     }
 
     await pool.query(
@@ -91,6 +101,20 @@ app.get("/get-supplies", async (req, res) => {
 
     return res.status(200).json({ response: result });
   } catch (error) {}
+});
+
+app.get("/chart-data", async (req, res) => {
+  const query_supply = await pool.query(`
+    SELECT * FROM manutencao.abastecimento
+  `);
+  const supply = query.rows;
+
+  const query_consumption = await pool.query(`
+      SELECT * FROM manutencao.consumo_diesel
+    `);
+  const consumption = query_consumption.rows;
+
+  res.status(200).json(result);
 });
 
 server.listen(port, () => {

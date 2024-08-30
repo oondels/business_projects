@@ -30,8 +30,10 @@
       <h5 class="col-6">Medidores de performance</h5>
 
       <div class="col-12 row">
-        <!-- v-if="(categoriaSelecionada, individualSelecionado, produtoSelecionado)" -->
-        <div class="col-4 ml-5 show-more-chemistry d-flex align-items-center">
+        <div
+          v-if="(categoriaSelecionada, individualSelecionado, produtoSelecionado)"
+          class="col-4 ml-5 show-more-chemistry d-flex align-items-center"
+        >
           <DetailedChart :productData="productData" />
         </div>
 
