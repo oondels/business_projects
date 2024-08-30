@@ -47,6 +47,7 @@
             background: 'success',
           }"
         />
+        <GraficosDiesel />
       </div>
 
       <div class="content">
@@ -77,12 +78,14 @@ import axios from "axios";
 import ip from "../ip";
 import Alert from "./components/Alert.vue";
 import MiniStatisticsCard from "./components/MiniStatisticsCard.vue";
+import GraficosDiesel from "./components/manutencao/GraficosDiesel.vue";
 
 export default {
   name: "NivelDiesel",
   components: {
     MiniStatisticsCard,
     Alert,
+    GraficosDiesel,
   },
 
   data() {

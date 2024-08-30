@@ -2,18 +2,18 @@
   <v-dialog max-width="1000">
     <template v-slot:activator="{ props: activatorProps }">
       <div v-bind="activatorProps" class="help-icon cursor-pointer">
-        <v-btn @click="searchProductHistory" color="success" variant="flat" append-icon="mdi-open-in-new">Detalhar Gráfico</v-btn>
+        <v-btn @click="dieselCharts" color="success" variant="flat" append-icon="mdi-open-in-new">Gráficos</v-btn>
       </div>
     </template>
 
     <template v-slot:default="{ isActive }">
       <v-card>
         <v-card-title>
-          <h3>Detalhamento de Gráfico</h3>
+          <h4>Gráficos Diesel</h4>
         </v-card-title>
 
-        <v-card-item v-if="Object.keys(chartData).length" class="detailed-chart">
-          <ApexChart :chartData="chartData" />
+        <v-card-item>
+          <ApexChartManutencao />
         </v-card-item>
 
         <v-card-actions>
@@ -27,42 +27,29 @@
 
 <script>
 import axios from "axios";
-import ApexChart from "../../../examples/Charts/ApexChart.vue";
 import ip from "../../../ip";
+import ApexChartManutencao from "./ApexChartManutencao.vue";
 
 export default {
-  name: "DetailedChart",
-
-  props: {
-    productData: {
-      type: Object,
-      required: true,
-    },
-  },
-
-  data() {
-    return {
-      chartData: {},
-    };
-  },
+  name: "GraficosDiesel",
 
   components: {
-    ApexChart,
+    ApexChartManutencao,
   },
 
   methods: {
-    searchProductHistory() {
+    dieselCharts() {
       axios
-        .get(`http://${ip}:3045/getProductHistory`, { params: this.productData })
+        .get(`http://${ip}:2399/chart-data`)
         .then((response) => {
-          this.chartData = response.data;
+          console.log(response.data);
         })
         .catch((error) => {
-          console.error("Error ao se comunicar com servidor: ", error);
+          console.error("Erro ao se comunicar com o servidor: ", error);
         });
     },
   },
 };
 </script>
 
-<style scoped></style>
+<style></style>
