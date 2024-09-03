@@ -278,7 +278,9 @@ export default {
         .post(`http://${ip}:3045/manipulaAbastecimento`, {
           abastecimento,
         })
-        .then(() => {
+        .then((response) => {
+          this.$refs.alert.mostrarAlerta("success", "done_outline", "Sucesso", response.data.message);
+
           this.abastecimentos = {};
           if (instrucao === "inicio") {
             return this.buscaSolicitacoes();
@@ -286,7 +288,8 @@ export default {
           window.location.reload();
         })
         .catch((error) => {
-          console.error("Erro ao iniciar abastecimento", error.response.status);
+          console.error("Erro ao iniciar abastecimento", error.response.data.message);
+          this.$refs.alert.mostrarAlerta("warning", "fas fa-thumbs-down", "Erro", error.response.data.message);
         });
     },
 
