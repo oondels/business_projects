@@ -3,38 +3,37 @@
     <div class="chart mb-6">
       <div class="chart-title d-flex justify-content-center">
         <i class="material-symbols-outlined pr-3"> currency_exchange </i>
-        <h5 class="text-center">Totais: Gasto(R$) X Consumo(Kg)</h5>
+        <h5 class="text-center">Abastecimento X Consumo</h5>
       </div>
-      <!-- <ApexCharts type="line" height="370" options="" series="" /> -->
+      <ApexCharts type="line" height="370" :options="chartOptions" :series="chartSeries" />
     </div>
   </div>
 </template>
 
 <script>
-// import ApexCharts from "vue3-apexcharts";
+import ApexCharts from "vue3-apexcharts";
 
 export default {
-  // props: {
-  //   chartData: {
-  //     type: Object,
-  //     required: true,
-  //   },
-  // },
+  props: {
+    chartData: {
+      type: Object,
+      required: true,
+    },
+  },
 
   components: {
-    // ApexCharts,
+    ApexCharts,
   },
 
-  mounted() {
-    this.test();
-  },
+  mounted() {},
 
-  methods: {
-    test() {},
-  },
+  methods: {},
 
   data() {
-    return {};
+    return {
+      chartOptions: this.chartData.supplyConsumption.options,
+      chartSeries: this.chartData.supplyConsumption.series,
+    };
   },
 };
 </script>

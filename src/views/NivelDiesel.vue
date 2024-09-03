@@ -13,7 +13,7 @@
                 <p class="text-center">Hisórico</p>
                 <ul>
                   <li v-for="(supply, supplyId) in supplies" :key="supplyId">
-                    <b class="text-primary">{{ supply.quantidade }} ml</b> <br />
+                    <b class="text-primary">{{ supply.quantidade }} L</b> <br />
                     {{ formattedDate(supply.data_abastecimento) }}
                   </li>
                 </ul>
@@ -29,7 +29,7 @@
                 <p class="text-center">Medições</p>
                 <ul>
                   <li v-for="(level, levelId) in lastLevels" :key="levelId">
-                    <b class="text-primary">{{ level.nivel }} ml</b> <br />
+                    <b class="text-primary">{{ level.nivel }} L</b> <br />
                     {{ formattedDate(level.data_medicao) }}
                   </li>
                 </ul>
@@ -38,24 +38,34 @@
           </v-expansion-panel>
         </v-expansion-panels>
       </div>
-      <div class="info-diesel col-lg-5 col-md-6 col-sm-6 mt-lg-0 mt-4">
-        <mini-statistics-card
-          :title="{ text: `Nível Atual: ${currentNivel.nivel} ml` }"
-          :icon="{
-            name: 'oil_barrel',
-            color: 'text-white',
-            background: 'success',
-          }"
-        />
-        <GraficosDiesel />
+      <div class="info-diesel col-lg-5 col-md-6 col-sm-6">
+        <div class="info-content d-flex flex-row justify-content-between">
+          <div class="d-flex align-items-center justif-content-center">
+            <i class="material-symbols-outlined"> oil_barrel </i>
+            <span>Nível Atual: {{ currentNivel.nivel }} L</span>
+          </div>
+
+          <div class="d-flex align-items-center justif-content-center">
+            <i class="material-symbols-outlined"> nest_clock_farsight_analog </i>
+            <span>Horas Úteis: {{ workingHours.hours }} horas e {{ workingHours.minutes }} minutos</span>
+          </div>
+        </div>
+        <div class="consumption">
+          <div class="avg-sum-consumption d-flex flex-row">
+            <p class="consumption-item">Consumo Médio: {{ avgConsumption }} L</p>
+            <p class="consumption-item">Consumo Total: {{ sumConsumption }} L</p>
+          </div>
+
+          <GraficosDiesel />
+        </div>
       </div>
 
       <div class="content">
         <v-container class="item-grid gauge">
           <v-progress-circular :model-value="progressValue()" :rotate="180" :size="300" :width="70" :color="currentColor">
-            <span>{{ currentNivel.nivel }} ml</span>
+            <span>{{ currentNivel.nivel }} L</span>
           </v-progress-circular>
-          <p class="pt-3">Última atualização: {{ formattedDate(currentNivel.data_medicao) }}</p>
+          <p @click="efficiencyCalc()" class="pt-3">Última atualização: {{ formattedDate(currentNivel.data_medicao) }}</p>
         </v-container>
       </div>
 
@@ -77,13 +87,11 @@
 import axios from "axios";
 import ip from "../ip";
 import Alert from "./components/Alert.vue";
-import MiniStatisticsCard from "./components/MiniStatisticsCard.vue";
 import GraficosDiesel from "./components/manutencao/GraficosDiesel.vue";
 
 export default {
   name: "NivelDiesel",
   components: {
-    MiniStatisticsCard,
     Alert,
     GraficosDiesel,
   },
@@ -93,18 +101,22 @@ export default {
       currentNivel: 0,
       socket: null,
       min: 0,
-      max: 218.0,
+      max: 1000.0,
       currentColor: "",
       alerts: [],
       buttonNotification: false,
       supplies: [],
       lastLevels: [],
+      workingHours: [],
+      avgConsumption: "",
+      sumConsumption: "",
     };
   },
 
   mounted() {
     this.setupWebSocket();
     this.getSupplies();
+    this.getConsumption();
   },
 
   computed: {
@@ -195,8 +207,22 @@ export default {
         });
     },
 
+    getConsumption() {
+      axios
+        .get(`http://${ip}:2399/diesel-consumption`)
+        .then((response) => {
+          this.sumConsumption = parseFloat(response.data.avgSum[0].sum_consumption).toFixed(2);
+          this.avgConsumption = parseFloat(response.data.avgSum[0].avg_consumption).toFixed(2);
+          this.workingHours = response.data.workingHours;
+        })
+        .catch((error) => {
+          console.error("Erro ao se comunicar com servidor: ", error);
+        });
+    },
+
+    efficiencyCalc() {},
+
     sendEmail() {
-      console.log("Email enviado");
       this.$refs.alert.mostrarAlerta("success", "mark_email_read", "Sucesso", `Email Enviado com Solicitação de Compra!`);
     },
   },
@@ -229,6 +255,37 @@ export default {
     "sidebar-diesel info-diesel alerts"
     "sidebar-diesel content alerts";
   gap: 20px;
+}
+
+.info-diesel {
+  width: auto;
+}
+
+.info-content {
+  padding: 10px;
+  background-color: #34495e;
+  color: #fff;
+  border-radius: 5px;
+}
+
+.info-content i {
+  font-size: 35px;
+  color: #4caf50;
+  margin-right: 10px;
+}
+
+.consumption {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px;
+}
+
+.consumption-item {
+  padding: 8px;
+  background-color: #4169e1;
+  border-radius: 5px;
+  margin-right: 10px;
+  color: #fff;
 }
 
 .grid-with-alerts {

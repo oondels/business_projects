@@ -12,8 +12,8 @@
           <h4>Gráficos Diesel</h4>
         </v-card-title>
 
-        <v-card-item>
-          <ApexChartManutencao />
+        <v-card-item v-if="Object.keys(chartData).length">
+          <ApexChartManutencao :chartData="chartData" />
         </v-card-item>
 
         <v-card-actions>
@@ -37,12 +37,18 @@ export default {
     ApexChartManutencao,
   },
 
+  data() {
+    return {
+      chartData: {},
+    };
+  },
+
   methods: {
     dieselCharts() {
       axios
         .get(`http://${ip}:2399/chart-data`)
         .then((response) => {
-          console.log(response.data);
+          this.chartData = response.data;
         })
         .catch((error) => {
           console.error("Erro ao se comunicar com o servidor: ", error);

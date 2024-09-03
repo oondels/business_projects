@@ -1,6 +1,8 @@
+import { log } from "console";
 import cors from "cors";
 import express from "express";
 import http from "http";
+import { measureMemory } from "vm";
 import { WebSocketServer } from "ws";
 import { pool } from "./db.cjs";
 
@@ -103,18 +105,119 @@ app.get("/get-supplies", async (req, res) => {
   } catch (error) {}
 });
 
+app.get("/diesel-consumption", async (req, res) => {
+  try {
+    const queryAvgSum = await pool.query(`
+      SELECT 
+          AVG(saida) as avg_consumption,
+          SUM(saida) as sum_consumption,
+          COUNT(*) as total_records
+        FROM 
+          manutencao.consumo_diesel
+        WHERE 
+          EXTRACT(YEAR FROM data_consumo) = EXTRACT(YEAR from CURRENT_DATE) AND
+          EXTRACT(MONTH FROM data_consumo) = EXTRACT(MONTH from CURRENT_DATE);
+      `);
+
+    const avgSum = queryAvgSum.rows;
+    const sumConsumption = parseFloat(avgSum[0].sum_consumption);
+    const totalRecords = parseFloat(avgSum[0].total_records) * 4;
+
+    const workingHours = sumConsumption / totalRecords;
+    const hours = Math.floor(workingHours);
+    const minutes = Math.floor((workingHours - hours) * 60);
+
+    res.status(200).json({
+      avgSum: avgSum,
+      workingHours: { hours: hours, minutes: minutes },
+    });
+  } catch (error) {
+    console.error("Erro ao consultar banco de dados: ", error);
+
+    res.status(500).json({ message: "Erro ao consultar banco de dados" });
+  }
+});
+
 app.get("/chart-data", async (req, res) => {
-  const query_supply = await pool.query(`
-    SELECT * FROM manutencao.abastecimento
-  `);
-  const supply = query.rows;
+  try {
+    const getMonth = (monthNumber) => {
+      const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+      return months[monthNumber - 1];
+    };
 
-  const query_consumption = await pool.query(`
-      SELECT * FROM manutencao.consumo_diesel
+    const query_supply = await pool.query(`
+      SELECT 
+        EXTRACT(MONTH FROM data_abastecimento) as month,
+        SUM(quantidade) as total_supply
+      FROM 
+        manutencao.abastecimento
+      WHERE 
+        EXTRACT(YEAR FROM data_abastecimento) = EXTRACT(YEAR FROM CURRENT_DATE)
+      GROUP BY
+        month
+      ORDER BY 
+        month;
     `);
-  const consumption = query_consumption.rows;
+    const supplyData = query_supply.rows;
 
-  res.status(200).json(result);
+    const query_consumption = await pool.query(`
+        SELECT 
+          EXTRACT(MONTH FROM data_consumo) as month,
+          SUM(saida) as total_consumption
+        FROM 
+          manutencao.consumo_diesel
+        WHERE 
+          EXTRACT(YEAR FROM data_consumo) = EXTRACT(YEAR from CURRENT_DATE)
+        GROUP BY
+          month
+        ORDER BY
+          month
+      `);
+    const consumptionData = query_consumption.rows;
+
+    let supplyConsumption = {
+      options: {
+        chart: {
+          id: "supply-consumption",
+        },
+
+        stroke: {
+          width: 5,
+          curve: "smooth",
+        },
+
+        xaxis: {
+          categories: [],
+        },
+      },
+
+      series: [
+        {
+          name: "Abastecimento Diesel",
+          data: [],
+        },
+        {
+          name: "Consumo Diesel",
+          data: [],
+        },
+      ],
+    };
+
+    supplyData.forEach((value) => {
+      if (!supplyConsumption.options.xaxis.categories.includes(getMonth(value.month))) {
+        supplyConsumption.options.xaxis.categories.push(getMonth(value.month));
+        supplyConsumption.series[0].data.push(value.total_supply);
+      }
+    });
+
+    consumptionData.forEach((value) => {
+      supplyConsumption.series[1].data.push(value.total_consumption);
+    });
+
+    res.status(200).json({ supplyConsumption });
+  } catch (error) {
+    console.error("Erro ao se comunicar com servidor: ", error);
+  }
 });
 
 server.listen(port, () => {
