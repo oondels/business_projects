@@ -8,64 +8,90 @@
           <div class="card z-index-0 fadeIn3 fadeInBottom">
             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
               <div class="bg-gradient-danger shadow-danger border-radius-lg py-3 pe-1">
-                <h4 class="text-white font-weight-bolder text-center mt-2 mb-0">
-                  Login
-                </h4>
+                <h4 class="text-white font-weight-bolder text-center mt-2 mb-0">Login</h4>
               </div>
             </div>
             <div class="card-body">
               <form class="text-start mt-3" @submit.prevent="signIn">
                 <div class="mb-3">
-                  <material-input id="usuario" type="usuario" label="Usuário" name="usuario"
-                    @update:value="handleUsuarioChange" />
+                  <material-input
+                    id="usuario"
+                    type="usuario"
+                    label="Usuário"
+                    name="usuario"
+                    @update:value="handleUsuarioChange"
+                  />
                 </div>
                 <div class="mb-3">
-                  <material-input id="senha" type="password" label="Senha" name="senha" :value="senha"
-                    @update:value="handleSenhaChange" />
+                  <material-input
+                    id="senha"
+                    type="password"
+                    label="Senha"
+                    name="senha"
+                    :value="senha"
+                    @update:value="handleSenhaChange"
+                  />
                 </div>
                 <span class="text-danger" v-if="mensagem">{{ mensagemExibida }}</span>
 
                 <div class="text-center">
-                  <material-button type="submit" class="my-4 mb-2" variant="gradient" color="danger"
-                    fullWidth>Entrar</material-button>
+                  <material-button type="submit" class="my-4 mb-2" variant="gradient" color="danger" fullWidth
+                    >Entrar</material-button
+                  >
                 </div>
                 <p class="mt-4 text-sm text-center">
                   Esqueceu a senha?
                   <v-dialog max-width="400">
                     <template v-slot:activator="{ props: activatorProps }">
-                      <span v-bind="activatorProps" @click="overlay = !overlay"
-                        class="text-danger text-gradient font-weight-bold">Recuperar</span>
+                      <span v-bind="activatorProps" @click="overlay = !overlay" class="text-danger text-gradient font-weight-bold"
+                        >Recuperar</span
+                      >
                     </template>
 
                     <template v-slot:default="{ isActive }">
                       <v-card class="container">
                         <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                           <div class="bg-gradient-danger shadow-danger border-radius-lg py-3 pe-1">
-                            <h4 class="text-white font-weight-bolder text-center mt-2 mb-0">
-                              Recuperar senha
-                            </h4>
+                            <h4 class="text-white font-weight-bolder text-center mt-2 mb-0">Recuperar senha</h4>
                           </div>
                         </div>
                         <form class="text-start mt-3 container" @submit.prevent="recuperar">
                           <div class="mb-3">
-                            <material-input id="codigo" type="codigo" label="Código" name="codigo"
-                              @update:value="handleCodigoChange" />
+                            <material-input
+                              id="codigo"
+                              type="codigo"
+                              label="Código"
+                              name="codigo"
+                              @update:value="handleCodigoChange"
+                            />
                           </div>
                           <div class="mb-3">
-                            <material-input id="novaSenha" type="password" label="Nova senha" name="novaSenha"
-                              @update:value="handleNovaSenhaChange" />
+                            <material-input
+                              id="novaSenha"
+                              type="password"
+                              label="Nova senha"
+                              name="novaSenha"
+                              @update:value="handleNovaSenhaChange"
+                            />
                           </div>
                           <span class="text-danger" v-if="mensagem">{{ mensagemExibida }}</span>
 
                           <div class="text-center">
-                            <material-button type="submit" class="my-4 mb-2" variant="gradient" color="danger"
-                              fullWidth>Alterar</material-button>
-                            <material-button type="button" @click="isActive.value = false" class="my-4 mb-2"
-                              variant="gradient" color="danger" fullWidth>Fechar</material-button>
+                            <material-button type="submit" class="my-4 mb-2" variant="gradient" color="danger" fullWidth
+                              >Alterar</material-button
+                            >
+                            <material-button
+                              type="button"
+                              @click="isActive.value = false"
+                              class="my-4 mb-2"
+                              variant="gradient"
+                              color="danger"
+                              fullWidth
+                              >Fechar</material-button
+                            >
                           </div>
                         </form>
                       </v-card>
-
                     </template>
                   </v-dialog>
                 </p>
@@ -84,12 +110,12 @@
 </template>
 
 <script>
-import Navbar from "@/examples/PageLayout/Navbar.vue";
-import MaterialInput from "@/components/MaterialInput.vue";
 import MaterialButton from "@/components/MaterialButton.vue";
+import MaterialInput from "@/components/MaterialInput.vue";
+import Navbar from "@/examples/PageLayout/Navbar.vue";
+import axios from "axios";
 import { mapMutations } from "vuex";
 import ip from "../ip";
-import axios from "axios";
 
 export default {
   name: "sign-in",
@@ -108,23 +134,23 @@ export default {
   },
   data() {
     return {
-      usuario: '',
-      senha: '',
+      usuario: "",
+      senha: "",
       codigo: 0,
-      novaSenha: '',
+      novaSenha: "",
 
       backgroundImageUrl: require("../../public/img/illustrations/back-fila.jpg"),
 
       mensagem: false,
-      mensagemExibida: ''
+      mensagemExibida: "",
     };
   },
   computed: {
     backgroundStyle() {
       return {
-        backgroundImage: `url(${this.backgroundImageUrl})`
+        backgroundImage: `url(${this.backgroundImageUrl})`,
       };
-    }
+    },
   },
   methods: {
     handleUsuarioChange(newValue) {
@@ -147,41 +173,43 @@ export default {
       this.mensagem = true;
       setTimeout(() => {
         this.mensagem = false;
-      }, 5000)
+      }, 5000);
 
       return mensagem;
     },
 
     ...mapMutations(["toggleEveryDisplay", "toggleHideConfig"]),
     signIn() {
-      axios.post(`http://${ip}:3050/login`, {
-        usuario: this.usuario,
-        senha: this.senha
-      })
-        .then(response => {
-          const token = response.data.data.token;
-          sessionStorage.setItem('token', token);
-          this.$router.push('/inicio');
+      axios
+        .post(`http://${ip}:3041/login`, {
+          usuario: this.usuario,
+          senha: this.senha,
         })
-        .catch(error => {
-          this.mensagemExibida = this.mostrarMensagem('Usuário ou senha inválidos')
-          console.error('Erro ao fazer o login: ', error.response);
+        .then((response) => {
+          const token = response.data.data.token;
+          sessionStorage.setItem("token", token);
+          this.$router.push("/inicio");
+        })
+        .catch((error) => {
+          this.mensagemExibida = this.mostrarMensagem("Usuário ou senha inválidos");
+          console.error("Erro ao fazer o login: ", error.response);
         });
     },
 
     recuperar() {
-      axios.post(`http://${ip}:3050/recuperar`, {
-        codigo: this.codigo,
-        novaSenha: this.novaSenha
-      })
+      axios
+        .post(`http://${ip}:3041/recuperar`, {
+          codigo: this.codigo,
+          novaSenha: this.novaSenha,
+        })
         .then(() => {
-          this.mensagemExibida = this.mostrarMensagem('Senha alterada com sucesso')
+          this.mensagemExibida = this.mostrarMensagem("Senha alterada com sucesso");
         })
-        .catch(error => {
-          this.mensagemExibida = this.mostrarMensagem('Erro ao alterar a senha, tente novamente')
-          console.error('Erro ao alterar a senha: ', error);
-        })
-    }
-  }
-}
+        .catch((error) => {
+          this.mensagemExibida = this.mostrarMensagem("Erro ao alterar a senha, tente novamente");
+          console.error("Erro ao alterar a senha: ", error);
+        });
+    },
+  },
+};
 </script>

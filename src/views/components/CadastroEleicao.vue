@@ -133,7 +133,7 @@ export default {
 
     registerPoll() {
       axios
-        .post(`http://${ip}:3070/register-polling`, this.poll)
+        .post(`http://${ip}:3051/register-polling`, this.poll)
         .then((response) => {
           this.$refs.alert.mostrarAlerta("success", "bi bi-exclamations", "Sucesso", response.data);
         })

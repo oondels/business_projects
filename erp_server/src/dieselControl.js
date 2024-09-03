@@ -1,15 +1,13 @@
-import { log } from "console";
 import cors from "cors";
 import express from "express";
 import http from "http";
-import { measureMemory } from "vm";
 import { WebSocketServer } from "ws";
 import { pool } from "./db.cjs";
 
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
-const port = 2399;
+const port = 3050;
 
 app.use(cors());
 app.use(express.json());

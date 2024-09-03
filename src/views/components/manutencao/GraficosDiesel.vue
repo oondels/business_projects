@@ -46,7 +46,7 @@ export default {
   methods: {
     dieselCharts() {
       axios
-        .get(`http://${ip}:2399/chart-data`)
+        .get(`http://${ip}:3050/chart-data`)
         .then((response) => {
           this.chartData = response.data;
         })

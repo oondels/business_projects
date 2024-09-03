@@ -130,7 +130,7 @@ export default {
 
   methods: {
     setupWebSocket() {
-      this.socket = new WebSocket(`ws://${ip}:2399`);
+      this.socket = new WebSocket(`ws://${ip}:3050`);
 
       this.socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
@@ -198,7 +198,7 @@ export default {
 
     getSupplies() {
       axios
-        .get(`http://${ip}:2399/get-supplies`)
+        .get(`http://${ip}:3050/get-supplies`)
         .then((response) => {
           this.supplies = response.data.response;
         })
@@ -209,7 +209,7 @@ export default {
 
     getConsumption() {
       axios
-        .get(`http://${ip}:2399/diesel-consumption`)
+        .get(`http://${ip}:3050/diesel-consumption`)
         .then((response) => {
           this.sumConsumption = parseFloat(response.data.avgSum[0].sum_consumption).toFixed(2);
           this.avgConsumption = parseFloat(response.data.avgSum[0].avg_consumption).toFixed(2);
