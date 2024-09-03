@@ -24,14 +24,11 @@ app.use(express.json());
 
 const port = 3050;
 
-console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
-console.log(`IP: ${process.env.IP}`);
-
 app.get("/", (req, res) => {
   res.send("Hello World");
 });
 
-app.listen(port, ip, () => console.log(`App listening on port ${port}!`));
+app.listen(port, ip, () => console.log(`App listening on port ${port}! at ip ${ip}`));
 
 const storagePalavraGerencial = multer.diskStorage({
   destination: function (req, file, cb) {
