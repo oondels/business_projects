@@ -444,12 +444,19 @@ app.post("/manipulaAbastecimento", async (req, res) => {
       );
       return res.status(200).send("Iniciado com sucesso");
     }
+
     if (abastecimento.instrucao === "fim") {
+      const abastecimentosJson = JSON.parse(abastecimento.abastecimentos)[0];
+
+      if (!abastecimentosJson.Resíduo || !abastecimentosJson.Final) {
+        return res.status(400).json({ message: "Dados incorretos ou ausentes. Verifique preenchimento e tente novamente!" });
+      }
+
       const fim = await pool.query(
         `UPDATE quimico.solicitacoes_pacotes SET entregue = true, data_fim = NOW(), usuario_fim = $1, abastecimento = $2 WHERE id = $3`,
         [abastecimento.usuario, abastecimento.abastecimentos, abastecimento.id]
       );
-      return res.status(200).send("Finalizado com sucesso");
+      return res.status(200).json({ message: "Finalizado com sucesso" });
     }
   } catch (error) {
     return res.status(500).send("Erro interno do servidor");
@@ -555,19 +562,18 @@ app.get("/buscaFiltrosIndividuais", async (req, res) => {
 
 app.get("/buscaDadosProdutos", async (req, res) => {
   try {
-    const { individual, produto } = req.query;
+    const { categoria, individual, produto } = req.query;
     const params = [];
     const produtos = [];
 
     let baseQuery = `
-        WITH pacotes_aggregated AS (
+         WITH pacotes_aggregated AS (
             SELECT 
                 qp.id AS produto_id,
                 qp.produto,
                 (abastecimento_item->>'mes')::int AS mes,
-             
-                SUM((abastecimento_item->>'Final')::numeric) AS total_produtivo,
-                SUM((abastecimento_item->>'Resíduo')::numeric) AS total_residuo,
+                SUM(CASE WHEN (abastecimento_item->>'Final') = '' THEN 0 ELSE (abastecimento_item->>'Final')::numeric END) AS total_produtivo,
+                SUM(CASE WHEN (abastecimento_item->>'Resíduo') = '' THEN 0 ELSE (abastecimento_item->>'Resíduo')::numeric END) AS total_residuo,
                 qp.preco_kg
             FROM 
                 quimico.produtos qp
@@ -585,8 +591,8 @@ app.get("/buscaDadosProdutos", async (req, res) => {
     }
 
     baseQuery += `
-        GROUP BY 
-            qp.id, qp.produto, mes, qp.preco_kg
+            GROUP BY 
+                qp.id, qp.produto, mes, qp.preco_kg
         ),
         individuais_aggregated AS (
             SELECT 
@@ -690,8 +696,7 @@ app.get("/buscaDadosProdutos", async (req, res) => {
       "total_produtivo",
       "total_residuo",
       "Produtivo(Kg)",
-      "Resíduo(Kg)",
-      "Data"
+      "Resíduo(Kg)"
     );
     const graficoTotalProdutivoResiduoRS = montaGrafico(
       buscaDados.rows,
@@ -699,8 +704,7 @@ app.get("/buscaDadosProdutos", async (req, res) => {
       "total_gasto_produtivo",
       "total_gasto_residuo",
       "Produtivo(R$)",
-      "Resíduo(R$)",
-      "Data"
+      "Resíduo(R$)"
     );
     const graficoTotalConsumoGasto = montaGrafico(
       buscaDados.rows,
@@ -708,8 +712,7 @@ app.get("/buscaDadosProdutos", async (req, res) => {
       "total_gasto",
       "total_consumido",
       "Gasto(R$)",
-      "Consumido(Kg)",
-      "Data"
+      "Consumido(Kg)"
     );
 
     return res.json({
@@ -1277,9 +1280,10 @@ app.get("/solicitacoes", async (req, res) => {
     const baseQueryPacote = `
             SELECT 
                 id, createdate, celula, turno, nome_solicitante, matricula_solicitante, gerente,
-                SUM((ab->>'Resíduo')::numeric) as residuo, SUM((ab->>'Final')::numeric) as abastecido,
-                SUM((ab->>'Resíduo')::numeric) * SUM((ab->>'preco_kg')::numeric) AS custo_residuo,
-                SUM((ab->>'Final')::numeric) * SUM((ab->>'preco_kg')::numeric) AS custo_produtivo
+                SUM(CASE WHEN (ab->>'Resíduo') = '' THEN 0 ELSE (ab->>'Resíduo')::numeric END) AS residuo,
+                SUM(CASE WHEN (ab->>'Final') = '' THEN 0 ELSE (ab->>'Final')::numeric END) AS abastecido,
+                SUM(CASE WHEN (ab->>'Resíduo') = '' THEN 0 ELSE (ab->>'Resíduo')::numeric END) * SUM(CASE WHEN (ab->>'preco_kg') = '' THEN 0 ELSE (ab->>'preco_kg')::numeric END) AS custo_residuo,
+                SUM(CASE WHEN (ab->>'Final') = '' THEN 0 ELSE (ab->>'Final')::numeric END) * SUM(CASE WHEN (ab->>'preco_kg') = '' THEN 0 ELSE (ab->>'preco_kg')::numeric END) AS custo_produtivo
             FROM 
                 quimico.solicitacoes_pacotes,
                 jsonb_array_elements(abastecimento) AS ab   
@@ -1324,6 +1328,7 @@ app.get("/solicitacoes", async (req, res) => {
 
     return res.status(200).json({ solicitacoes: result.rows, gerentes: gerentes });
   } catch (error) {
+    console.error("Erro interno no servidor: ", error);
     return res.status(500).send("Erro interno do servidor");
   }
 });
