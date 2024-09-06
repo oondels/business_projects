@@ -30,7 +30,7 @@ wss.on("connection", (ws) => {
   };
 
   // Enviar dados a cada 5 segundos
-  const intervalId = setInterval(sendDieselData, 7000);
+  const intervalId = setInterval(sendDieselData, 2000);
 
   // Limpar intervalo quando a conexão é fechada
   ws.on("close", () => {
@@ -41,7 +41,12 @@ wss.on("connection", (ws) => {
 
 app.post("/post-diesel", async (req, res) => {
   try {
-    const { nivel, unidade_dass } = req.body;
+    const { nivel, unidade_dass, distancia } = req.body;
+
+    // console.log(`Distância: ${distancia}`);
+    // console.log(`Nível: ${nivel}`);
+
+    const nivelMedido = parseFloat(nivel).toFixed(2);
 
     const getDiesel = await pool.query(`
         SELECT * FROM manutencao.diesel
@@ -59,7 +64,7 @@ app.post("/post-diesel", async (req, res) => {
             INSERT INTO manutencao.abastecimento (quantidade, unidade_dass)
             VALUES ($1, $2);
           `,
-          [nivel - lastMeasure.nivel, unidade_dass]
+          [nivelMedido - lastMeasure.nivel, unidade_dass]
         );
       }
 
@@ -69,7 +74,7 @@ app.post("/post-diesel", async (req, res) => {
             INSERT INTO manutencao.consumo_diesel (saida, unidade_dass)
             VALUES ($1, $2);
           `,
-          [lastMeasure.nivel - nivel, unidade_dass]
+          [lastMeasure.nivel - nivelMedido, unidade_dass]
         );
       }
     }
@@ -79,7 +84,7 @@ app.post("/post-diesel", async (req, res) => {
         INSERT INTO manutencao.diesel (nivel, unidade_dass)
         VALUES ($1, $2);
       `,
-      [nivel, unidade_dass]
+      [nivelMedido, unidade_dass]
     );
 
     return res.status(200).json({ response: "Dados Recebidos" });
@@ -105,7 +110,7 @@ app.get("/get-supplies", async (req, res) => {
 
 app.get("/diesel-consumption", async (req, res) => {
   try {
-    const queryAvgSum = await pool.query(`
+    const queryAvgSumDiesel = await pool.query(`
       SELECT 
           AVG(saida) as avg_consumption,
           SUM(saida) as sum_consumption,
@@ -116,17 +121,46 @@ app.get("/diesel-consumption", async (req, res) => {
           EXTRACT(YEAR FROM data_consumo) = EXTRACT(YEAR from CURRENT_DATE) AND
           EXTRACT(MONTH FROM data_consumo) = EXTRACT(MONTH from CURRENT_DATE);
       `);
+    const avgSumDiesel = queryAvgSumDiesel.rows;
 
-    const avgSum = queryAvgSum.rows;
-    const sumConsumption = parseFloat(avgSum[0].sum_consumption);
-    const totalRecords = parseFloat(avgSum[0].total_records) * 4;
+    const queryConsumptionHours = await pool.query(`
+        SELECT
+          EXTRACT(EPOCH FROM (data_consumo - LAG(data_consumo) OVER (ORDER BY data_consumo))) AS time_consumption
+        FROM
+          manutencao.consumo_diesel
+        ORDER BY
+          data_consumo;
+      `);
+    const hourConsumption = queryConsumptionHours.rows;
 
-    const workingHours = sumConsumption / totalRecords;
+    const getDiesel = await pool.query(`
+        SELECT * FROM manutencao.diesel
+        ORDER BY id DESC
+        LIMIT 2;
+      `);
+
+    // INFO: Última nível de Diesel
+    const lastMeasure = getDiesel.rows[0];
+
+    const sumConsumption = parseFloat(avgSumDiesel[0].sum_consumption);
+
+    // INFO: Cálculo do tempo total de intervalo entre consumo
+    let totalTime = 0;
+    hourConsumption.forEach((value) => {
+      if (value.time_consumption) {
+        totalTime += parseFloat(value.time_consumption);
+      }
+    });
+
+    const consumoMedio = sumConsumption / (totalTime / 3600);
+
+    // INFO: Horas úteis
+    const workingHours = lastMeasure.nivel / consumoMedio;
     const hours = Math.floor(workingHours);
     const minutes = Math.floor((workingHours - hours) * 60);
 
     res.status(200).json({
-      avgSum: avgSum,
+      avgSum: avgSumDiesel,
       workingHours: { hours: hours, minutes: minutes },
     });
   } catch (error) {
@@ -139,7 +173,20 @@ app.get("/diesel-consumption", async (req, res) => {
 app.get("/chart-data", async (req, res) => {
   try {
     const getMonth = (monthNumber) => {
-      const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+      const months = [
+        "Janeiro",
+        "Fevereiro",
+        "Março",
+        "Abril",
+        "Maio",
+        "Junho",
+        "Julho",
+        "Agosto",
+        "Setembro",
+        "Outubro",
+        "Novembro",
+        "Dezembro",
+      ];
       return months[monthNumber - 1];
     };
 
@@ -202,7 +249,11 @@ app.get("/chart-data", async (req, res) => {
     };
 
     supplyData.forEach((value) => {
-      if (!supplyConsumption.options.xaxis.categories.includes(getMonth(value.month))) {
+      if (
+        !supplyConsumption.options.xaxis.categories.includes(
+          getMonth(value.month)
+        )
+      ) {
         supplyConsumption.options.xaxis.categories.push(getMonth(value.month));
         supplyConsumption.series[0].data.push(value.total_supply);
       }
