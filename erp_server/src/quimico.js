@@ -52,26 +52,39 @@ app.post("/cadastrarModelo", async (req, res) => {
       return res.status(422).send("É necessário preencher todos os dados!");
     }
 
-    const verificaModelo = await client.query(`SELECT modelo FROM quimico.modelo WHERE modelo = $1 AND processo = $2`, [
-      modelo.modelo.toUpperCase(),
-      modelo.processo.toUpperCase(),
-    ]);
+    const verificaModelo = await client.query(
+      `SELECT modelo FROM quimico.modelo WHERE modelo = $1 AND processo = $2`,
+      [modelo.modelo.toUpperCase(), modelo.processo.toUpperCase()]
+    );
     if (verificaModelo.rowCount > 0) {
-      return res.status(422).send("Este modelo já possui um registro, altere o existente!");
+      return res
+        .status(422)
+        .send("Este modelo já possui um registro, altere o existente!");
     }
 
     const salvaModelo = await client.query(
       `
             INSERT INTO quimico.modelo (marca, modelo, processo, createdate, usuariocreate) 
             VALUES ($1, $2, $3, NOW(), $4) RETURNING id, modelo;`,
-      [modelo.marca.toUpperCase(), modelo.modelo.toUpperCase(), modelo.processo.toUpperCase(), usuario.toUpperCase()]
+      [
+        modelo.marca.toUpperCase(),
+        modelo.modelo.toUpperCase(),
+        modelo.processo.toUpperCase(),
+        usuario.toUpperCase(),
+      ]
     );
 
     if (salvaModelo.rowCount > 0) {
       const dadosModelo = salvaModelo.rows[0];
 
       for (const produto of produtos) {
-        if (!produto.produto || !produto.consumoPrevio || !produto.precoKg || !produto.base || !produto.recipientes) {
+        if (
+          !produto.produto ||
+          !produto.consumoPrevio ||
+          !produto.precoKg ||
+          !produto.base ||
+          !produto.recipientes
+        ) {
           return res.status(422).send("É necessário preencher todos os dados!");
         }
 
@@ -125,8 +138,16 @@ app.put("/atualizar-modelo", async (req, res) => {
     );
 
     for (const p of newModelo.produto) {
-      if (!p.produto || !p.consumoPrevio || !p.precoKg || !p.base || !p.recipientes) {
-        return res.status(422).json({ message: "É necessário preencher todos os dados do(s) produto(s)!" });
+      if (
+        !p.produto ||
+        !p.consumoPrevio ||
+        !p.precoKg ||
+        !p.base ||
+        !p.recipientes
+      ) {
+        return res.status(422).json({
+          message: "É necessário preencher todos os dados do(s) produto(s)!",
+        });
       }
 
       const novosProdutos = await pool.query(
@@ -148,7 +169,9 @@ app.put("/atualizar-modelo", async (req, res) => {
       );
 
       if (novosProdutos.rowCount === 0) {
-        return res.status(400).json({ message: "Erro ao alterar o(s) produto(s)." });
+        return res
+          .status(400)
+          .json({ message: "Erro ao alterar o(s) produto(s)." });
       }
     }
 
@@ -165,7 +188,9 @@ app.put("/atualizar-modelo", async (req, res) => {
     }
 
     if (!newModelo.modelo || !newModelo.processo || !newModelo.marca) {
-      return res.status(422).json({ message: "É necessário preencher todos os dados do modelo!" });
+      return res
+        .status(422)
+        .json({ message: "É necessário preencher todos os dados do modelo!" });
     }
 
     const alterarModelo = await pool.query(
@@ -174,11 +199,18 @@ app.put("/atualizar-modelo", async (req, res) => {
         SET modelo = $1, processo = $2, marca = $3
         WHERE id = $4
       `,
-      [newModelo.modelo, newModelo.processo, newModelo.marca, newModelo.modeloSelecionado]
+      [
+        newModelo.modelo,
+        newModelo.processo,
+        newModelo.marca,
+        newModelo.modeloSelecionado,
+      ]
     );
 
     if (alterarModelo.rowCount == 0) {
-      return res.status(404).json({ message: "Não foi possível alterar o modelo. Não Encontrado" });
+      return res
+        .status(404)
+        .json({ message: "Não foi possível alterar o modelo. Não Encontrado" });
     }
 
     res.status(200).json({ message: "Modelo alterado com sucesso" });
@@ -193,14 +225,17 @@ app.get("/buscaModelosCadastrados", async (req, res) => {
     const processo = req.query.processo;
 
     if (processo) {
-      const modelosCadastrados = await pool.query(`SELECT id, modelo, marca, processo FROM quimico.modelo WHERE processo = $1 ORDER BY modelo;`, [
-        processo,
-      ]);
+      const modelosCadastrados = await pool.query(
+        `SELECT id, modelo, marca, processo FROM quimico.modelo WHERE processo = $1 ORDER BY modelo;`,
+        [processo]
+      );
 
       return res.status(200).json(modelosCadastrados.rows);
     }
 
-    const modelosCadastrados = await pool.query(`SELECT id, modelo, marca, processo FROM quimico.modelo`);
+    const modelosCadastrados = await pool.query(
+      `SELECT id, modelo, marca, processo FROM quimico.modelo`
+    );
     return res.status(200).json(modelosCadastrados.rows);
   } catch (error) {
     return res.status(500).send("Erro interno do servidor");
@@ -211,7 +246,9 @@ app.get("/buscaProcessosCadastrados", async (req, res) => {
   try {
     let processos = [""];
 
-    const processosCadastrados = await pool.query(`SELECT DISTINCT processo FROM quimico.modelo ORDER BY processo;`);
+    const processosCadastrados = await pool.query(
+      `SELECT DISTINCT processo FROM quimico.modelo ORDER BY processo;`
+    );
     processosCadastrados.rows.map((row) => processos.push(row.processo));
     return res.status(200).json(processos);
   } catch (error) {
@@ -224,10 +261,15 @@ app.get("/buscaSolicitante", async (req, res) => {
     const matricula = req.query.matricula;
 
     if (!matricula) {
-      return res.status(404).send("Você pode ter colocado a matrícula incorreta");
+      return res
+        .status(404)
+        .send("Você pode ter colocado a matrícula incorreta");
     }
 
-    const solicitante = await pool.query(`SELECT * FROM colaborador.lista_funcionario WHERE matricula = $1`, [matricula]);
+    const solicitante = await pool.query(
+      `SELECT * FROM colaborador.lista_funcionario WHERE matricula = $1`,
+      [matricula]
+    );
     return res.status(200).json(solicitante.rows[0]);
   } catch (error) {
     return res.status(500).send("Erro interno do servidor", error);
@@ -236,56 +278,64 @@ app.get("/buscaSolicitante", async (req, res) => {
 
 app.post("/salvarSolicitacaoPacote", async (req, res) => {
   try {
-    const { solicitacao } = req.body;
+    const { solicitacoes, local, user } = req.body;
 
-    if (
-      !solicitacao.modelo ||
-      !solicitacao.idModelo ||
-      !solicitacao.producao ||
-      !solicitacao.celula ||
-      !solicitacao.turno ||
-      !solicitacao.fabrica ||
-      !solicitacao.nome ||
-      !solicitacao.matricula ||
-      !solicitacao.gerente ||
-      !solicitacao.processo ||
-      !solicitacao.marca
-    ) {
-      return res.status(422).send("Dados inválidos ou ausentes");
+    for (const solicitacao of solicitacoes) {
+      if (
+        !solicitacao.modelo ||
+        !solicitacao.idModelo ||
+        !solicitacao.producao ||
+        !solicitacao.processo ||
+        !solicitacao.marca
+      ) {
+        return res.status(422).send("Dados inválidos ou ausentes");
+      }
+
+      if (!local.celula || !local.turno || !local.fabrica) {
+        return res.status(422).send("Dados inválidos ou ausentes");
+      }
+
+      if (!user.nome || !user.matricula || !user.gerente) {
+        return res.status(422).send("Dados inválidos ou ausentes");
+      }
+
+      let verificaModelo = await pool.query(
+        `SELECT modelo
+        FROM quimico.solicitacoes_pacotes
+        WHERE id_modelo = $1
+          AND entregue = false
+          AND createdate::date = CURRENT_DATE AND celula = $2
+          AND cancelado = false;`,
+        [solicitacao.idModelo, local.celula]
+      );
+
+      if (verificaModelo.rowCount > 0) {
+        return res
+          .status(422)
+          .send(
+            "Você já fez uma solicitação para este(s) modelo(s) nesta célula hoje"
+          );
+      }
+
+      let salvaSolicitacaoPacote = await pool.query(
+        `
+              INSERT INTO quimico.solicitacoes_pacotes (createdate, modelo, id_modelo, producao, celula, turno, fabrica, nome_solicitante, matricula_solicitante, gerente, processo, marca)
+              VALUES ('NOW()', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        [
+          solicitacao.modelo,
+          solicitacao.idModelo,
+          solicitacao.producao,
+          local.celula,
+          local.turno,
+          local.fabrica,
+          user.nome,
+          user.matricula,
+          user.gerente,
+          solicitacao.processo,
+          solicitacao.marca,
+        ]
+      );
     }
-
-    const verificaModelo = await pool.query(
-      `SELECT modelo
-      FROM quimico.solicitacoes_pacotes 
-      WHERE id_modelo = $1 
-        AND entregue = false 
-        AND createdate::date = CURRENT_DATE AND celula = $2 
-        AND cancelado = false;`,
-      [solicitacao.idModelo, solicitacao.celula]
-    );
-
-    if (verificaModelo.rowCount > 0) {
-      return res.status(422).send("Você já fez uma solicitação para este modelo nesta célula hoje");
-    }
-
-    const salvaSolicitacaoPacote = await pool.query(
-      `
-            INSERT INTO quimico.solicitacoes_pacotes (createdate, modelo, id_modelo, producao, celula, turno, fabrica, nome_solicitante, matricula_solicitante, gerente, processo, marca)
-            VALUES ('NOW()', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-      [
-        solicitacao.modelo,
-        solicitacao.idModelo,
-        solicitacao.producao,
-        solicitacao.celula,
-        solicitacao.turno,
-        solicitacao.fabrica,
-        solicitacao.nome,
-        solicitacao.matricula,
-        solicitacao.gerente,
-        solicitacao.processo,
-        solicitacao.marca,
-      ]
-    );
 
     return res.status(200).send("Solicitação salva com sucesso!");
   } catch (error) {
@@ -302,7 +352,10 @@ app.get("/buscaProdutosCadastrados", async (req, res) => {
     );
 
     produtosCadastrados.rows.map((row) => {
-      produtos.push({ dados: { id: row.id, preco_kg: row.preco_kg }, produto: row.produto });
+      produtos.push({
+        dados: { id: row.id, preco_kg: row.preco_kg },
+        produto: row.produto,
+      });
     });
     return res.status(200).json(produtos);
   } catch (error) {
@@ -338,7 +391,11 @@ app.post("/salvarSolicitacaoIndividual", async (req, res) => {
     );
 
     if (verificaProduto.rowCount > 0) {
-      return res.status(422).send("Você já fez uma solicitação para este produto nesta célula hoje");
+      return res
+        .status(422)
+        .send(
+          "Você já fez uma solicitação para este produto nesta célula hoje"
+        );
     }
 
     const salvaSolicitacao = await pool.query(
@@ -383,6 +440,7 @@ app.get("/pacoteSolicitacao", async (req, res) => {
             s.processo,
             s.abastecendo,
             s.cancelado,
+            s.marca,
             COALESCE(
                 json_agg(
                     json_build_object(
@@ -415,17 +473,45 @@ app.get("/pacoteSolicitacao", async (req, res) => {
             s.entregue,
             s.processo,
             s.abastecendo,
-            s.cancelado;
+            s.cancelado,
+            s.marca;
 `);
     return res.status(200).json(solicitacao.rows);
   } catch (error) {
+    console.error("Erro interno no servidor: ", error);
+
     return res.status(500).send("Erro interno do servidor");
+  }
+});
+
+app.get("/getProdutoSalvo", async (req, res) => {
+  try {
+    const id = req.query.id;
+
+    const getProdutoSalvos = await pool.query(
+      `
+        SELECT * 
+        FROM
+          quimico.solicitacoes_pacotes
+        WHERE 
+          produto_salvo = true AND
+          id = $1
+      `,
+      [id]
+    );
+
+    res.status(200).send(getProdutoSalvos.rows);
+  } catch (error) {
+    console.error("Erro interno no servidor: ", error);
+    res.status(500).send("Erro interno no servidor!");
   }
 });
 
 app.get("/individualSolicitado", async (req, res) => {
   try {
-    const solicitacao = await pool.query(`SELECT * FROM quimico.solicitacoes_individuais WHERE entregue = false ORDER BY createdate ASC;`);
+    const solicitacao = await pool.query(
+      `SELECT * FROM quimico.solicitacoes_individuais WHERE entregue = false ORDER BY createdate ASC;`
+    );
 
     return res.status(200).json(solicitacao.rows);
   } catch (error) {
@@ -445,11 +531,22 @@ app.post("/manipulaAbastecimento", async (req, res) => {
       return res.status(200).send("Iniciado com sucesso");
     }
 
+    if (abastecimento.instrucao === "salvar") {
+      await pool.query(
+        `UPDATE quimico.solicitacoes_pacotes SET abastecimento = $1 WHERE id = $2`,
+        [abastecimento.abastecimentos, abastecimento.id]
+      );
+      return res.status(200).json({ message: "Salvo com sucesso" });
+    }
+
     if (abastecimento.instrucao === "fim") {
       const abastecimentosJson = JSON.parse(abastecimento.abastecimentos)[0];
 
       if (!abastecimentosJson.Resíduo || !abastecimentosJson.Final) {
-        return res.status(400).json({ message: "Dados incorretos ou ausentes. Verifique preenchimento e tente novamente!" });
+        return res.status(400).json({
+          message:
+            "Dados incorretos ou ausentes. Verifique preenchimento e tente novamente!",
+        });
       }
 
       const fim = await pool.query(
@@ -471,18 +568,20 @@ app.put("/cancelarSolicitacao", async (req, res) => {
       return res.status(400).send("ID e matrícula e motivo são obrigatórios");
     }
 
-    const verificaDisponibilidade = await pool.query(`SELECT * FROM quimico.solicitacoes_pacotes WHERE id = $1 AND matricula_solicitante = $2`, [
-      id,
-      matricula,
-    ]);
+    const verificaDisponibilidade = await pool.query(
+      `SELECT * FROM quimico.solicitacoes_pacotes WHERE id = $1 AND matricula_solicitante = $2`,
+      [id, matricula]
+    );
     if (verificaDisponibilidade.rowCount === 0) {
-      return res.status(404).send("Esta solicitação não foi feita pela matrícula fornecida");
+      return res
+        .status(404)
+        .send("Esta solicitação não foi feita pela matrícula fornecida");
     }
 
-    const cacelaSolicitacao = await pool.query(`UPDATE quimico.solicitacoes_pacotes SET cancelado = true, motivo_cancelamento = $1 WHERE id = $2`, [
-      motivoSelecionado,
-      id,
-    ]);
+    const cacelaSolicitacao = await pool.query(
+      `UPDATE quimico.solicitacoes_pacotes SET cancelado = true, motivo_cancelamento = $1 WHERE id = $2`,
+      [motivoSelecionado, id]
+    );
 
     return res.status(200).send("Solicitação cancelada com sucesso");
   } catch (error) {
@@ -498,7 +597,10 @@ app.put("/excluiSolicitacao", async (req, res) => {
       return res.status(400).send("ID é obrigatório");
     }
 
-    const excluiSolicitacao = await pool.query(`UPDATE quimico.solicitacoes_pacotes SET excluido = true WHERE id = $1`, [id]);
+    const excluiSolicitacao = await pool.query(
+      `UPDATE quimico.solicitacoes_pacotes SET excluido = true WHERE id = $1`,
+      [id]
+    );
 
     return res.status(200).send("Solicitação excluída com sucesso");
   } catch (error) {
@@ -516,15 +618,21 @@ app.post("/salvaAbastecimentoIndividual", async (req, res) => {
     }
 
     if (abastecimento.instrucao === "inicio") {
-      await pool.query(`UPDATE quimico.solicitacoes_individuais SET abastecendo = true, data_inicio = NOW(), usuario_inicio = $1 WHERE id = $2`, [
-        abastecimento.usuario,
-        abastecimento.id,
-      ]);
+      await pool.query(
+        `UPDATE quimico.solicitacoes_individuais SET abastecendo = true, data_inicio = NOW(), usuario_inicio = $1 WHERE id = $2`,
+        [abastecimento.usuario, abastecimento.id]
+      );
       return res.status(200).send("Iniciado com sucesso");
     } else if (abastecimento.instrucao === "fim") {
       await pool.query(
         `UPDATE quimico.solicitacoes_individuais SET entregue = true, data_fim = NOW(), usuario_fim = $1, residuo = $2, abastecido = $3, mes = $4 WHERE id = $5`,
-        [abastecimento.usuario, abastecimento.residuo, abastecimento.abastecido, abastecimento.mes, abastecimento.id]
+        [
+          abastecimento.usuario,
+          abastecimento.residuo,
+          abastecimento.abastecido,
+          abastecimento.mes,
+          abastecimento.id,
+        ]
       );
       return res.status(200).send("Finalizado com sucesso");
     } else {
@@ -545,13 +653,17 @@ app.get("/buscaFiltrosIndividuais", async (req, res) => {
       return;
     }
 
-    let categoriaFormatada = categoria[0].toLowerCase() + categoria.substring(1);
+    let categoriaFormatada =
+      categoria[0].toLowerCase() + categoria.substring(1);
     let query = `SELECT DISTINCT ${categoriaFormatada} FROM quimico.solicitacoes_pacotes WHERE entregue = true ORDER BY ${categoriaFormatada} ASC;`;
 
     const filtrosData = await pool.query(query);
 
     filtrosData.rows.map((row) => {
-      filtros.push({ titulo: categoriaFormatada, valor: row[categoriaFormatada] });
+      filtros.push({
+        titulo: categoriaFormatada,
+        valor: row[categoriaFormatada],
+      });
     });
 
     return res.status(200).json(filtros);
@@ -609,7 +721,10 @@ app.get("/buscaDadosProdutos", async (req, res) => {
             WHERE 
                 EXTRACT(YEAR FROM si.createdate) = EXTRACT(YEAR FROM CURRENT_DATE)`;
 
-    if (individual && (individual.titulo === "gerente" || individual.titulo === "produto")) {
+    if (
+      individual &&
+      (individual.titulo === "gerente" || individual.titulo === "produto")
+    ) {
       baseQuery += ` AND si.${individual.titulo} = $${params.length + 1} `;
       params.push(individual.valor);
     }
@@ -665,10 +780,19 @@ app.get("/buscaDadosProdutos", async (req, res) => {
       }
     });
 
-    const montaGrafico = (dados, criterio, produtivo, residuo, label1, label2) => {
+    const montaGrafico = (
+      dados,
+      criterio,
+      produtivo,
+      residuo,
+      label1,
+      label2
+    ) => {
       let dadosGrafico = {
         nome: criterio,
-        labels: Array.from({ length: 12 }, (_, i) => new Date(0, i).toLocaleString("pt-BR", { month: "long" })),
+        labels: Array.from({ length: 12 }, (_, i) =>
+          new Date(0, i).toLocaleString("pt-BR", { month: "long" })
+        ),
         datasets: [
           {
             label: label1,
@@ -751,8 +875,14 @@ app.get("/getProductHistory", async (req, res) => {
         WHERE 
             EXTRACT(YEAR FROM sp.createdate) = EXTRACT(YEAR FROM CURRENT_DATE) AND sp.cancelado = false`;
 
-    if (productData.individual && productData.individual.titulo && productData.individual.titulo !== "produto") {
-      query += ` AND sp.${productData.individual.titulo} = $${params.length + 1} `;
+    if (
+      productData.individual &&
+      productData.individual.titulo &&
+      productData.individual.titulo !== "produto"
+    ) {
+      query += ` AND sp.${productData.individual.titulo} = $${
+        params.length + 1
+      } `;
       params.push(productData.individual.valor);
     }
 
@@ -776,8 +906,14 @@ app.get("/getProductHistory", async (req, res) => {
                 EXTRACT(YEAR FROM si.createdate) = EXTRACT(YEAR FROM CURRENT_DATE)
     `;
 
-    if (productData.individual && (productData.individual.titulo === "gerente" || productData.individual.titulo === "produto")) {
-      query += ` AND si.${productData.individual.titulo} = $${params.length + 1} `;
+    if (
+      productData.individual &&
+      (productData.individual.titulo === "gerente" ||
+        productData.individual.titulo === "produto")
+    ) {
+      query += ` AND si.${productData.individual.titulo} = $${
+        params.length + 1
+      } `;
       params.push(productData.individual.valor);
     }
 
@@ -1021,7 +1157,14 @@ app.put("/manipularProduto", async (req, res) => {
             UPDATE quimico.produtos
             SET produto = $1, consumo_previo = $2, preco_kg = $3, base = $4, recipientes = $5
             WHERE id = $6;`,
-      [produto.produto.toUpperCase(), produto.consumo_previo, produto.preco_kg, produto.base.toUpperCase(), produto.recipientes, produto.id]
+      [
+        produto.produto.toUpperCase(),
+        produto.consumo_previo,
+        produto.preco_kg,
+        produto.base.toUpperCase(),
+        produto.recipientes,
+        produto.id,
+      ]
     );
 
     return res.status(200).send("Produto atualizado com sucesso");
@@ -1038,7 +1181,10 @@ app.delete("/manipularProduto", async (req, res) => {
       return res.status(400).send("Produto não fornecido");
     }
 
-    const deletaProduto = await pool.query(`DELETE FROM quimico.produtos WHERE id = $1`, [id]);
+    const deletaProduto = await pool.query(
+      `DELETE FROM quimico.produtos WHERE id = $1`,
+      [id]
+    );
 
     return res.status(200).send("Produto deletado com sucesso");
   } catch (error) {
@@ -1209,8 +1355,14 @@ app.get("/xlsxPacotes", async (req, res) => {
 
     const buffer = await workbook.xlsx.writeBuffer();
 
-    res.setHeader("Content-Disposition", "attachment; filename=solicitacoes.xlsx");
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=solicitacoes.xlsx"
+    );
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
     res.send(buffer);
   } catch (error) {
     console.error("Erro ao buscar solicitações", error);
@@ -1222,18 +1374,33 @@ app.post("/cracha", async (req, res) => {
   try {
     const { colaborador } = req.body;
 
-    if (!colaborador.matricula || !colaborador.nome || !colaborador.gerente || !colaborador.setor || !colaborador.autorizante) {
+    if (
+      !colaborador.matricula ||
+      !colaborador.nome ||
+      !colaborador.gerente ||
+      !colaborador.setor ||
+      !colaborador.autorizante
+    ) {
       return res.status(422).send("Dados obrigatórios inválidos ou ausente");
     }
 
-    const verificaDisponibilidade = await pool.query(`SELECT * FROM quimico.autorizados WHERE matricula = $1`, [colaborador.matricula]);
+    const verificaDisponibilidade = await pool.query(
+      `SELECT * FROM quimico.autorizados WHERE matricula = $1`,
+      [colaborador.matricula]
+    );
     if (verificaDisponibilidade.rowCount > 0) {
       return res.status(401).send("Este crachá já tem autorização.");
     }
 
     const salvaAltorizacao = await pool.query(
       `INSERT INTO quimico.autorizados (createdate, matricula, nome, gerente, setor, autorizante) VALUES ('NOW()', $1, $2, $3, $4, $5)`,
-      [colaborador.matricula, colaborador.nome, colaborador.gerente, colaborador.setor, colaborador.autorizante]
+      [
+        colaborador.matricula,
+        colaborador.nome,
+        colaborador.gerente,
+        colaborador.setor,
+        colaborador.autorizante,
+      ]
     );
 
     return res.status(200).send("Autorização salva com sucesso");
@@ -1304,7 +1471,9 @@ app.get("/solicitacoes", async (req, res) => {
     }
 
     if (data) {
-      query += ` AND date_trunc('day', createdate) = $${params.length + 1}::date`;
+      query += ` AND date_trunc('day', createdate) = $${
+        params.length + 1
+      }::date`;
       params.push(data);
     }
 
@@ -1326,7 +1495,9 @@ app.get("/solicitacoes", async (req, res) => {
       gerentes.push(row.gerente);
     });
 
-    return res.status(200).json({ solicitacoes: result.rows, gerentes: gerentes });
+    return res
+      .status(200)
+      .json({ solicitacoes: result.rows, gerentes: gerentes });
   } catch (error) {
     console.error("Erro interno no servidor: ", error);
     return res.status(500).send("Erro interno do servidor");
