@@ -5,7 +5,9 @@
       <div class="sidebar-diesel item-grid">
         <v-expansion-panels variant="popout" class="pa-0">
           <v-expansion-panel>
-            <v-expansion-panel-title class="d-flex flex-row align-items-center justify-content-between">
+            <v-expansion-panel-title
+              class="d-flex flex-row align-items-center justify-content-between"
+            >
               Abastecimentos
             </v-expansion-panel-title>
             <v-expansion-panel-text class="bg-light">
@@ -13,7 +15,8 @@
                 <p class="text-center">Hisórico</p>
                 <ul>
                   <li v-for="(supply, supplyId) in supplies" :key="supplyId">
-                    <b class="text-primary">{{ supply.quantidade }} L</b> <br />
+                    <b class="text-primary">{{ supply.quantidade }} L</b>
+                    <br />
                     {{ formattedDate(supply.data_abastecimento) }}
                   </li>
                 </ul>
@@ -21,7 +24,9 @@
             </v-expansion-panel-text>
           </v-expansion-panel>
           <v-expansion-panel>
-            <v-expansion-panel-title class="d-flex flex-row align-items-center justify-content-between">
+            <v-expansion-panel-title
+              class="d-flex flex-row align-items-center justify-content-between"
+            >
               Ultimas medições
             </v-expansion-panel-title>
             <v-expansion-panel-text class="bg-light">
@@ -42,18 +47,26 @@
         <div class="info-content d-flex flex-row justify-content-between">
           <div class="d-flex align-items-center justif-content-center">
             <i class="material-symbols-outlined"> oil_barrel </i>
-            <span>Nível Atual: {{ currentNivel.nivel }} L</span>
+            <span>Nível Atual: {{ nivelFormat }} L</span>
           </div>
 
           <div class="d-flex align-items-center justif-content-center">
-            <i class="material-symbols-outlined"> nest_clock_farsight_analog </i>
-            <span>Horas Úteis: {{ workingHours.hours }} horas e {{ workingHours.minutes }} minutos</span>
+            <i class="material-symbols-outlined">
+              nest_clock_farsight_analog
+            </i>
+            <span>Horas Úteis: 0 horas e 10 minutos</span>
           </div>
         </div>
         <div class="consumption">
           <div class="avg-sum-consumption d-flex flex-row">
-            <p class="consumption-item">Consumo Médio: {{ avgConsumption }} L</p>
-            <p class="consumption-item">Consumo Total: {{ sumConsumption }} L</p>
+            <p class="consumption-item">
+              Consumo Médio:
+              {{ parseFloat(avgConsumption / 1000).toFixed(2) }} L
+            </p>
+            <p class="consumption-item">
+              Consumo Total:
+              {{ parseFloat(sumConsumption / 1000).toFixed(2) }} L
+            </p>
           </div>
 
           <GraficosDiesel />
@@ -62,15 +75,28 @@
 
       <div class="content">
         <v-container class="item-grid gauge">
-          <v-progress-circular :model-value="progressValue()" :rotate="180" :size="300" :width="70" :color="currentColor">
-            <span>{{ currentNivel.nivel }} L</span>
+          <v-progress-circular
+            :model-value="progressValue()"
+            :rotate="180"
+            :size="300"
+            :width="70"
+            :color="currentColor"
+          >
+            <span>{{ nivelFormat }} L</span>
           </v-progress-circular>
-          <p @click="efficiencyCalc()" class="pt-3">Última atualização: {{ formattedDate(currentNivel.data_medicao) }}</p>
+          <p @click="efficiencyCalc()" class="pt-3">
+            Última atualização: {{ formattedDate(currentNivel.data_medicao) }}
+          </p>
         </v-container>
       </div>
 
       <div class="item-grid alerts">
-        <i v-if="this.alerts.length > 0" @click="showAlerts" class="material-icons-round">notifications_active</i>
+        <i
+          v-if="this.alerts.length > 0"
+          @click="showAlerts"
+          class="material-icons-round"
+          >notifications_active</i
+        >
         <div v-for="(alert, alertIndex) in alerts" :key="alertIndex">
           <div v-if="buttonNotification" class="alert">
             <button @click="sendEmail">{{ alert }}</button>
@@ -99,10 +125,14 @@ export default {
   data() {
     return {
       currentNivel: 0,
+      nivelFormat: 0,
+
       socket: null,
+
       min: 0,
-      max: 1000.0,
+      max: 2888.057,
       currentColor: "",
+
       alerts: [],
       buttonNotification: false,
       supplies: [],
@@ -135,6 +165,9 @@ export default {
       this.socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
         this.currentNivel = data[0];
+        this.nivelFormat = parseFloat(this.currentNivel.nivel / 1000).toFixed(
+          2
+        );
         this.lastLevels = data.slice(-5);
       };
 
@@ -211,8 +244,12 @@ export default {
       axios
         .get(`http://${ip}:3050/diesel-consumption`)
         .then((response) => {
-          this.sumConsumption = parseFloat(response.data.avgSum[0].sum_consumption).toFixed(2);
-          this.avgConsumption = parseFloat(response.data.avgSum[0].avg_consumption).toFixed(2);
+          this.sumConsumption = parseFloat(
+            response.data.avgSum[0].sum_consumption
+          ).toFixed(2);
+          this.avgConsumption = parseFloat(
+            response.data.avgSum[0].avg_consumption
+          ).toFixed(2);
           this.workingHours = response.data.workingHours;
         })
         .catch((error) => {
@@ -223,7 +260,12 @@ export default {
     efficiencyCalc() {},
 
     sendEmail() {
-      this.$refs.alert.mostrarAlerta("success", "mark_email_read", "Sucesso", `Email Enviado com Solicitação de Compra!`);
+      this.$refs.alert.mostrarAlerta(
+        "success",
+        "mark_email_read",
+        "Sucesso",
+        `Email Enviado com Solicitação de Compra!`
+      );
     },
   },
 
