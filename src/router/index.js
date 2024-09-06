@@ -5,6 +5,7 @@ import Inicio from "../views/Inicio.vue";
 import SignIn from "../views/SignIn.vue";
 import SignUp from "../views/SignUp.vue";
 
+import TreinamentoPCP from "../views/components/pcp/CadastroTreinamentoPcp.vue";
 import FerramentasLean from "../views/FerramentasLean.vue";
 import Informativo from "../views/Informativo.vue";
 import InformativoResultado from "../views/InformativoResultado.vue";
@@ -96,7 +97,10 @@ const routes = [
     path: "/departamento-pessoal/provisorio",
     name: "Provisorio",
     component: Provisorio,
-    meta: { requiresAuth: true, allowedSectors: ["AUTOMACAO", "DEPARTAMENTO PESSOAL"] },
+    meta: {
+      requiresAuth: true,
+      allowedSectors: ["AUTOMACAO", "DEPARTAMENTO PESSOAL"],
+    },
   },
 
   {
@@ -104,6 +108,13 @@ const routes = [
     name: "PCP",
     component: PCP,
     meta: { requiresAuth: true, allowedSectors: ["AUTOMACAO", "PPCP"] },
+  },
+
+  {
+    path: "/pcp/treinamento",
+    name: "Treinamento PCP",
+    component: TreinamentoPCP,
+    meta: { requiresAuth: true, allowedSectors: ["Automação", "PPCP"] },
   },
 
   {
@@ -191,7 +202,13 @@ router.beforeEach((to, from, next) => {
       next({ name: "SignIn" });
     } else {
       const userSetor = getSetor();
-      if (to.matched.some((record) => record.meta.allowedSectors.includes(userSetor) || userSetor === "AUTOMACAO")) {
+      if (
+        to.matched.some(
+          (record) =>
+            record.meta.allowedSectors.includes(userSetor) ||
+            userSetor === "AUTOMACAO"
+        )
+      ) {
         next();
       } else {
         next({ name: "Inicio" });
