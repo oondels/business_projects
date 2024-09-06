@@ -1,31 +1,93 @@
 <template>
   <div class="col-12 row">
     <h5 class="col-8">Solicitações de Pacotes</h5>
-    <v-btn v-if="permissoes" @click="baixaPlano()" class="col-4" text="Baixar"></v-btn>
+    <v-text-field
+      variant="solo-filled"
+      class="col-12 mb-3"
+      label="Célula"
+      v-model="pesquisaSolicitacao.celula"
+      @update:modelValue="filtroSolicitacoes"
+    >
+    </v-text-field>
+
+    <v-select
+      color="primary"
+      variant="solo-filled"
+      class="col-6"
+      label="Marca"
+      v-model="pesquisaSolicitacao.marca"
+      @update:modelValue="filtroSolicitacoes"
+      :items="['NIKE', 'FILA']"
+      clearable
+    >
+    </v-select>
+
+    <v-select
+      color="primary"
+      variant="solo-filled"
+      class="col-6"
+      label="Turno"
+      v-model="pesquisaSolicitacao.turno"
+      @update:modelValue="filtroSolicitacoes"
+      :items="['TURNO A', 'TURNO B']"
+      clearable
+    >
+    </v-select>
+
+    <v-btn
+      v-if="permissoes"
+      @click="baixaPlano()"
+      class="col-4"
+      text="Baixar"
+    ></v-btn>
   </div>
 
   <div class="col-12">
-    <v-expansion-panels v-if="solicitacoesPacote.length" class="my-4 lista" variant="popout">
-      <v-expansion-panel v-for="solicitacao in solicitacoesPacote" :key="solicitacao.id">
+    <v-expansion-panels
+      v-if="solicitacoesPacote.length"
+      class="my-4 lista"
+      variant="popout"
+    >
+      <v-expansion-panel
+        v-for="solicitacao in solicitacoesPacoteFiltrada"
+        :key="solicitacao.id"
+      >
         <v-expansion-panel-title class="col-12 row p-1 m-0">
           <div class="col-lg-1 d-flex flex-column">
-            <span class="col-lg-12 text-center text-xs rounded" :class="solicitacao.abastecendo ? 'bg-success' : 'bg-warning'">
+            <span
+              class="col-lg-12 text-center text-xs rounded"
+              :class="solicitacao.abastecendo ? 'bg-success' : 'bg-warning'"
+            >
               {{ solicitacao.abastecendo ? "Iniciado" : "Pendente" }}
             </span>
-            <span v-if="solicitacao.cancelado" class="mt-1 col-lg-12 text-center text-xs rounded bg-danger text-white">
+            <span
+              v-if="solicitacao.cancelado"
+              class="mt-1 col-lg-12 text-center text-xs rounded bg-danger text-white"
+            >
               Cancelado
             </span>
           </div>
-          <span class="col-sm-2 col-lg-1 text-sm">{{ solicitacao.celula }}</span>
+          <span class="col-sm-2 col-lg-1 text-sm">{{
+            solicitacao.celula
+          }}</span>
           <span class="col-lg-2 text-sm">{{ solicitacao.processo }}</span>
           <span class="col-lg-2 text-sm">{{ solicitacao.modelo }}</span>
-          <span class="col-lg-1 text-sm text-center">{{ solicitacao.producao }}</span>
-          <span class="col-lg-2 text-sm text-center">{{ solicitacao.turno }}</span>
-          <span class="col-lg-2 text-sm text-end">{{ dataFormatada(solicitacao.createdate) }}</span>
+          <span class="col-lg-1 text-sm text-center">{{
+            solicitacao.producao
+          }}</span>
+          <span class="col-lg-2 text-sm text-center">{{
+            solicitacao.turno
+          }}</span>
+          <span class="col-lg-2 text-sm text-end">{{
+            dataFormatada(solicitacao.createdate)
+          }}</span>
         </v-expansion-panel-title>
         <v-expansion-panel-text class="border-top">
           <div class="col-12">
-            <v-card-actions class="bg-light rounded mb-2" v-if="!solicitacao.cancelado">
+            <v-card-actions
+              class="bg-light rounded mb-2"
+              v-if="!solicitacao.cancelado"
+            >
               <h4 class="m-0">Cancelar solicitação</h4>
               <v-spacer></v-spacer>
               <v-select
@@ -47,20 +109,39 @@
                 hide-details
               ></v-text-field>
               <v-btn
-                @click="cancelarSolicitacao(solicitacao.id, matriculaDelete, motivoSelecionado)"
+                @click="
+                  cancelarSolicitacao(
+                    solicitacao.id,
+                    matriculaDelete,
+                    motivoSelecionado
+                  )
+                "
                 color="error"
                 variant="flat"
                 text="Cancelar"
               ></v-btn>
             </v-card-actions>
             <div v-if="permissoes">
-              <div class="col-12 p-0 m-0 bg-info card mb-2 rounded" v-for="produto in solicitacao.produtos" :key="produto.id">
+              <div
+                class="col-12 p-0 m-0 bg-info card mb-2 rounded"
+                v-for="produto in solicitacao.produtos"
+                :key="produto.id"
+              >
                 <div class="col-12 row px-1">
-                  <span class="col-8"><strong>Produto:</strong> {{ produto.produto }}</span>
-                  <span class="col-2"><strong>Base:</strong> {{ produto.base }}</span>
-                  <span class="col-2 text-center"> <strong>Recipientes:</strong> {{ produto.recipientes }} </span>
+                  <span class="col-8"
+                    ><strong>Produto:</strong> {{ produto.produto }}</span
+                  >
+                  <span class="col-2"
+                    ><strong>Base:</strong> {{ produto.base }}</span
+                  >
+                  <span class="col-2 text-center">
+                    <strong>Recipientes:</strong> {{ produto.recipientes }}
+                  </span>
                 </div>
-                <div v-if="solicitacao.abastecendo" class="col-12 row p-0 m-0 py-2 bg-white">
+                <div
+                  v-if="solicitacao.abastecendo"
+                  class="col-12 row p-0 m-0 py-2 bg-white"
+                >
                   <v-text-field
                     v-for="(label, index) in horariosLabels"
                     :key="index"
@@ -70,7 +151,9 @@
                     density="compact"
                     type="number"
                     variant="outlined"
-                    v-model="getAbastecimentoModel(solicitacao.id, produto.id)[label]"
+                    v-model="
+                      getAbastecimentoModel(solicitacao.id, produto.id)[label]
+                    "
                   ></v-text-field>
                 </div>
               </div>
@@ -84,6 +167,15 @@
                 variant="flat"
                 text="Iniciar abastecimento"
               ></v-btn>
+
+              <v-btn
+                v-if="!solicitacao.cancelado"
+                @click="manipulaAbastecimento(solicitacao.id, 'salvar')"
+                color="warning"
+                variant="flat"
+                text="Salvar abastecimento"
+              ></v-btn>
+
               <v-btn
                 v-if="solicitacao.abastecendo && !solicitacao.cancelado"
                 @click="manipulaAbastecimento(solicitacao.id, 'fim')"
@@ -91,6 +183,7 @@
                 variant="flat"
                 text="Fechar pedido"
               ></v-btn>
+
               <v-btn
                 v-if="solicitacao.cancelado"
                 class="text-white"
@@ -129,6 +222,15 @@ export default {
     return {
       solicitacoesPacote: [],
       abastecimentos: [],
+      solicitacoesPacoteFiltrada: [],
+
+      pesquisaSolicitacao: {
+        celula: "",
+        turno: "",
+        marca: "",
+      },
+
+      produtoSalvoTeste: {},
 
       matriculaDelete: [],
 
@@ -151,11 +253,19 @@ export default {
 
   mounted() {
     this.buscaSolicitacoes();
+    this.filtroSolicitacoes();
   },
 
   computed: {
     horariosLabels() {
-      return ["1° Horário", "2° Horário", "3° Horário", "4° Horário", "Final", "Resíduo"];
+      return [
+        "1° Horário",
+        "2° Horário",
+        "3° Horário",
+        "4° Horário",
+        "Final",
+        "Resíduo",
+      ];
     },
   },
 
@@ -164,24 +274,47 @@ export default {
       axios
         .put(`http://${ip}:3045/excluiSolicitacao`, { id })
         .then((response) => {
-          this.$refs.alert.mostrarAlerta("success", "fas fa-thumbs-up", "Sucesso", response.data);
+          this.$refs.alert.mostrarAlerta(
+            "success",
+            "fas fa-thumbs-up",
+            "Sucesso",
+            response.data
+          );
           window.location.reload();
         })
         .catch((error) => {
-          const errorMessage = error.response ? error.response.data : "Erro desconhecido";
-          this.$refs.alert.mostrarAlerta("warning", "fas fa-thumbs-down", "Erro", errorMessage);
+          const errorMessage = error.response
+            ? error.response.data
+            : "Erro desconhecido";
+          this.$refs.alert.mostrarAlerta(
+            "warning",
+            "fas fa-thumbs-down",
+            "Erro",
+            errorMessage
+          );
         });
     },
 
     cancelarSolicitacao(id, matricula, motivoSelecionado) {
       axios
-        .put(`http://${ip}:3045/cancelarSolicitacao`, { id, matricula, motivoSelecionado })
+        .put(`http://${ip}:3045/cancelarSolicitacao`, {
+          id,
+          matricula,
+          motivoSelecionado,
+        })
         .then(() => {
           this.buscaSolicitacoes();
         })
         .catch((error) => {
-          const errorMessage = error.response ? error.response.data : "Erro desconhecido";
-          this.$refs.alert.mostrarAlerta("warning", "fas fa-thumbs-down", "Erro", errorMessage);
+          const errorMessage = error.response
+            ? error.response.data
+            : "Erro desconhecido";
+          this.$refs.alert.mostrarAlerta(
+            "warning",
+            "fas fa-thumbs-down",
+            "Erro",
+            errorMessage
+          );
         });
     },
 
@@ -205,13 +338,19 @@ export default {
 
           // let dataAtual = `${dia}/${mes}/${ano}`;
 
-          link.setAttribute("download", `solicitacoes ${dia}-${mes}-${ano} ${Hora}:${minutos}.xlsx`);
+          link.setAttribute(
+            "download",
+            `solicitacoes ${dia}-${mes}-${ano} ${Hora}:${minutos}.xlsx`
+          );
           document.body.appendChild(link);
           link.click();
           link.remove();
         })
         .catch((error) => {
-          console.error("Erro ao buscar solicitações", error.response ? error.response.status : error.message);
+          console.error(
+            "Erro ao buscar solicitações",
+            error.response ? error.response.status : error.message
+          );
         });
     },
 
@@ -221,17 +360,20 @@ export default {
       }
 
       let data = new Date();
-      // let dia = String(data.getDate()).padStart(2, "0");
-      // let mes = String(data.getMonth() + 1).padStart(2, "0");
-      // let ano = data.getFullYear();
 
-      // let dataAtual = `${dia}/${mes}/${ano}`;
+      let produto = this.abastecimentos.find(
+        (p) => p.id === produtoId && p.solicitacaoId === solicitacaoId
+      );
 
-      let produto = this.abastecimentos.find((p) => p.id === produtoId && p.solicitacaoId === solicitacaoId);
       if (!produto) {
-        let solicitacao = this.solicitacoesPacote.find((s) => s.id === solicitacaoId);
+        let solicitacao = this.solicitacoesPacote.find(
+          (s) => s.id === solicitacaoId
+        );
         if (solicitacao) {
-          let produtoData = solicitacao.produtos.find((p) => p.id === produtoId);
+          let produtoData = solicitacao.produtos.find(
+            (p) => p.id === produtoId
+          );
+
           if (produtoData) {
             let totalFinal = produtoData.consumo_previo * solicitacao.producao;
             let consumoPrevio = totalFinal / 4;
@@ -266,6 +408,22 @@ export default {
       return produto;
     },
 
+    // INFO: Continuar daqui... (Ver solução para manter a informação de produto que tiveram dados de residuo ou final alteradas e salvas)
+    getProdutoSalvo(id) {
+      axios
+        .get(`http://${ip}:3045/getProdutoSalvo`, {
+          params: {
+            id: id,
+          },
+        })
+        .then((response) => {
+          this.produtoSalvoTeste = response.data;
+        })
+        .catch((error) => {
+          console.error("Erro ao consultar produtos salvos: ", error);
+        });
+    },
+
     manipulaAbastecimento(id, instrucao) {
       const abastecimento = {
         id: id,
@@ -279,7 +437,12 @@ export default {
           abastecimento,
         })
         .then((response) => {
-          this.$refs.alert.mostrarAlerta("success", "done_outline", "Sucesso", response.data.message);
+          this.$refs.alert.mostrarAlerta(
+            "success",
+            "done_outline",
+            "Sucesso",
+            response.data.message
+          );
 
           this.abastecimentos = {};
           if (instrucao === "inicio") {
@@ -288,9 +451,42 @@ export default {
           window.location.reload();
         })
         .catch((error) => {
-          console.error("Erro ao iniciar abastecimento", error.response.data.message);
-          this.$refs.alert.mostrarAlerta("warning", "fas fa-thumbs-down", "Erro", error.response.data.message);
+          console.error(
+            "Erro ao iniciar abastecimento",
+            error.response.data.message
+          );
+          this.$refs.alert.mostrarAlerta(
+            "warning",
+            "fas fa-thumbs-down",
+            "Erro",
+            error.response.data.message
+          );
         });
+    },
+
+    filtroSolicitacoes() {
+      if (this.pesquisaSolicitacao.celula) {
+        return (this.solicitacoesPacoteFiltrada =
+          this.solicitacoesPacote.filter((solicitacao) =>
+            solicitacao.celula.includes(this.pesquisaSolicitacao.celula)
+          ));
+      }
+
+      if (this.pesquisaSolicitacao.marca) {
+        return (this.solicitacoesPacoteFiltrada =
+          this.solicitacoesPacote.filter((solicitacao) =>
+            solicitacao.marca.includes(this.pesquisaSolicitacao.marca)
+          ));
+      }
+
+      if (this.pesquisaSolicitacao.turno) {
+        return (this.solicitacoesPacoteFiltrada =
+          this.solicitacoesPacote.filter((solicitacao) =>
+            solicitacao.turno.includes(this.pesquisaSolicitacao.turno)
+          ));
+      }
+
+      return (this.solicitacoesPacoteFiltrada = this.solicitacoesPacote);
     },
 
     buscaSolicitacoes() {
@@ -298,9 +494,15 @@ export default {
         .get(`http://${ip}:3045/pacoteSolicitacao`)
         .then((response) => {
           this.solicitacoesPacote = response.data;
+          // console.log(this.solicitacoesPacote);
+
+          this.filtroSolicitacoes();
         })
         .catch((error) => {
-          console.error("Erro ao buscar solicitações", error.response ? error.response.status : error.message);
+          console.error(
+            "Erro ao buscar solicitações",
+            error.response ? error.response.status : error.message
+          );
         });
     },
 

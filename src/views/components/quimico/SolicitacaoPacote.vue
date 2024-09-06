@@ -1,7 +1,10 @@
 <template>
-  <v-dialog max-width="800">
+  <v-dialog class="solicitacao-pacote" max-width="800">
     <template v-slot:activator="{ props: activatorProps }">
-      <div v-bind="activatorProps" class="col-lg-4 col-md-6 col-sm-6 mt-lg-0 mt-4 cursor-pointer">
+      <div
+        v-bind="activatorProps"
+        class="col-lg-4 col-md-6 col-sm-6 mt-lg-0 mt-4 cursor-pointer"
+      >
         <mini-statistics-card
           :title="{ text: 'Solicitação de pacote' }"
           :icon="{
@@ -14,64 +17,120 @@
     </template>
     <template v-slot:default="{ isActive }">
       <v-card>
-        <v-card-title class="text-center border-bottom position-sticky fixed-top border-bottom bg-white">
+        <v-card-title
+          class="text-center border-bottom position-sticky fixed-top border-bottom bg-white"
+        >
           <h3>Solicitação de químico</h3>
         </v-card-title>
         <v-card-item>
-          <div class="col-12 row">
+          <div class="cel-fab-turno mb-3 col-12 row">
+            <h5>Turno e Célula</h5>
+
+            <div class="col-6">
+              <v-text-field
+                type="number"
+                label="Célula"
+                v-model="dadoslocal.celula"
+              ></v-text-field>
+            </div>
+
+            <div class="col-6">
+              <v-select
+                :items="['Fábrica 1', 'Fábrica 2', 'Fábrica 3']"
+                label="Fábrica"
+                clearable
+                v-model="dadoslocal.fabrica"
+              ></v-select>
+            </div>
+
+            <div class="col-6">
+              <v-select
+                label="Turno"
+                v-model="dadoslocal.turno"
+                :items="['TURNO A', 'TURNO B']"
+                clearable
+              ></v-select>
+            </div>
+          </div>
+
+          <div
+            class="col-12 row mb-3 solicitacoes"
+            v-for="(solicitacao, solicitacaoIndex) in solicitacoes"
+            :key="solicitacaoIndex"
+          >
+            <div class="d-flex justify-content-between text-danger delete">
+              <h5 class="text-center mt-2">
+                Solicitação {{ solicitacaoIndex + 1 }}
+              </h5>
+              <i
+                class="material-symbols-outlined pr-3"
+                role="button"
+                @click="removeSolicitacao"
+                v-if="solicitacaoIndex > 0"
+              >
+                delete
+              </i>
+            </div>
             <div class="col-6">
               <v-select
                 :items="processos"
                 label="Processo"
                 v-model="solicitacao.processo"
-                @update:modelValue="buscaModelosCadastrados(solicitacao.processo)"
+                @update:modelValue="
+                  buscaModelosCadastrados(solicitacao.processo)
+                "
+                clearable
               ></v-select>
             </div>
 
             <div class="col-6">
               <v-combobox
                 :disabled="!solicitacao.processo"
-                :items="dadosModelo"
+                :items="dadosModelo[solicitacaoIndex]"
                 filterable
                 outlined
                 return-object
                 item-title="modelo"
                 item-value="id"
                 label="Modelo"
-                v-model="dadosModeloSelecionado"
-                @update:modelValue="atribuiModeloSolicitacao(dadosModeloSelecionado)"
+                v-model="dadosModeloSelecionado[solicitacaoIndex]"
+                @update:modelValue="
+                  atribuiModeloSolicitacao(
+                    dadosModeloSelecionado,
+                    solicitacaoIndex
+                  )
+                "
               >
               </v-combobox>
             </div>
 
             <div class="col-6">
-              <v-text-field type="number" label="Produção prevista" v-model="solicitacao.producao"></v-text-field>
+              <v-text-field
+                type="number"
+                label="Produção prevista"
+                v-model="solicitacao.producao"
+              ></v-text-field>
             </div>
+          </div>
 
-            <div class="col-6">
-              <v-text-field type="number" label="Célula" v-model="solicitacao.celula"></v-text-field>
-            </div>
-
-            <div class="col-6">
-              <v-select :items="['Fábrica 1', 'Fábrica 2', 'Fábrica 3']" label="Fábrica" v-model="solicitacao.fabrica"></v-select>
-            </div>
-
-            <div class="col-6">
-              <v-select label="Turno" v-model="solicitacao.turno" :items="['TURNO A', 'TURNO B']"></v-select>
-            </div>
-
+          <div class="matricula-nome">
             <div class="mt-3 col-12">
               <v-text-field
                 type="number"
                 :rules="matriculaRules"
                 label="Matrícula"
-                v-model="solicitacao.matricula"
-                @keyup="buscaSolicitante(solicitacao.matricula)"
+                v-model="dadosUser.matricula"
+                @keyup="buscaSolicitante(dadosUser.matricula)"
               ></v-text-field>
             </div>
 
             <div class="col-12">
-              <v-text-field type="text" disabled label="Nome" v-model="solicitacao.nome"></v-text-field>
+              <v-text-field
+                type="text"
+                disabled
+                label="Nome"
+                v-model="dadosUser.nome"
+              ></v-text-field>
             </div>
           </div>
         </v-card-item>
@@ -79,15 +138,28 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
+            color="primary"
+            variant="tonal"
+            append-icon="mdi-plus-circle"
+            @click="addSolicitacao"
+          >
+            Adicionar
+          </v-btn>
+          <v-btn
             color="danger"
             text="Fechar"
             variant="tonal"
             @click="
+              zerarSolicitacao();
               isActive.value = false;
-              zerarSolicitacao;
             "
           ></v-btn>
-          <v-btn color="success" text="Salvar" @click="salvarSolicitacao" variant="tonal"></v-btn>
+          <v-btn
+            color="success"
+            text="Salvar"
+            @click="salvarSolicitacao"
+            variant="tonal"
+          ></v-btn>
         </v-card-actions>
       </v-card>
     </template>
@@ -108,25 +180,34 @@ export default {
   emits: ["atualiza-solicitacoes"],
   data() {
     return {
-      solicitacao: {
-        modelo: "",
-        idModelo: 0,
-        producao: "",
+      solicitacoes: [
+        {
+          modelo: "",
+          idModelo: 0,
+          producao: "",
+          processo: "",
+          marca: "",
+        },
+      ],
+      dadoslocal: {
         celula: null,
         turno: "",
         fabrica: "",
+      },
+
+      dadosUser: {
         nome: "",
         matricula: "",
         gerente: "",
-        processo: "",
-        marca: "",
       },
 
-      matriculaRules: [(value) => (value && value.length >= 7) || "Insira seu crachá completo"],
+      matriculaRules: [
+        (value) => (value && value.length >= 7) || "Insira seu crachá completo",
+      ],
 
       processos: [],
       dadosModelo: [],
-      dadosModeloSelecionado: null,
+      dadosModeloSelecionado: [],
     };
   },
   mounted() {
@@ -137,17 +218,33 @@ export default {
       this.$emit("atualiza-solicitacoes", "pacote");
     },
 
-    atribuiModeloSolicitacao(modeloSelecionado) {
-      this.solicitacao.modelo = modeloSelecionado.modelo;
-      this.solicitacao.idModelo = modeloSelecionado.id;
-      this.solicitacao.marca = modeloSelecionado.marca;
+    addSolicitacao() {
+      this.solicitacoes.push({
+        modelo: "",
+        idModelo: 0,
+        producao: "",
+        processo: "",
+        marca: "",
+      });
+    },
+
+    removeSolicitacao(index) {
+      this.solicitacoes.splice(index, 1);
+    },
+
+    atribuiModeloSolicitacao(modeloSelecionado, index) {
+      this.solicitacoes[index].modelo = modeloSelecionado[index].modelo;
+      this.solicitacoes[index].idModelo = modeloSelecionado[index].id;
+      this.solicitacoes[index].marca = modeloSelecionado[index].marca;
     },
 
     buscaModelosCadastrados(processo) {
       axios
-        .get(`http://${ip}:3045/buscaModelosCadastrados`, { params: { processo: processo } })
+        .get(`http://${ip}:3045/buscaModelosCadastrados`, {
+          params: { processo: processo },
+        })
         .then((response) => {
-          this.dadosModelo = response.data;
+          this.dadosModelo.push(response.data);
         })
         .catch((error) => {
           console.error("Erro ao buscar modelos cadastrados", error.response);
@@ -158,7 +255,9 @@ export default {
       axios
         .get(`http://${ip}:3045/buscaProcessosCadastrados`)
         .then((response) => (this.processos = response.data))
-        .catch((error) => console.error("Erro ao buscar modelos cadastrados", error.response));
+        .catch((error) =>
+          console.error("Erro ao buscar modelos cadastrados", error.response)
+        );
     },
 
     buscaSolicitante(matricula) {
@@ -166,8 +265,8 @@ export default {
         axios
           .get(`http://${ip}:3045/cracha`, { params: { matricula: matricula } })
           .then((response) => {
-            this.solicitacao.nome = response.data[0].nome;
-            this.solicitacao.gerente = response.data[0].gerente;
+            this.dadosUser.nome = response.data[0].nome;
+            this.dadosUser.gerente = response.data[0].gerente;
           })
           .catch((error) => {
             console.error("Erro ao buscar solicitante", error.response);
@@ -176,17 +275,33 @@ export default {
     },
 
     salvarSolicitacao() {
+      console.log(this.solicitacoes);
+      console.log(this.dadoslocal);
+      console.log(this.dadosUser);
+
       axios
         .post(`http://${ip}:3045/salvarSolicitacaoPacote`, {
-          solicitacao: this.solicitacao,
+          solicitacoes: this.solicitacoes,
+          local: this.dadoslocal,
+          user: this.dadosUser,
         })
         .then(() => {
           this.zerarSolicitacao();
-          this.$refs.alert.mostrarAlerta("success", "fas fa-thumbs-up", "sucesso", "Solicitação salva com sucesso");
+          this.$refs.alert.mostrarAlerta(
+            "success",
+            "done_outline",
+            "Sucesso",
+            "Solicitação salva com sucesso"
+          );
           this.$emit("atualiza-solicitacoes", "pacote");
         })
         .catch((error) => {
-          this.$refs.alert.mostrarAlerta("warning", "fas fa-exclamation", "Atenção", error.response.data);
+          this.$refs.alert.mostrarAlerta(
+            "warning",
+            "warning",
+            "Atenção",
+            error.response.data
+          );
         });
     },
 
@@ -198,8 +313,29 @@ export default {
     },
 
     zerarSolicitacao() {
-      this.solicitacao = {};
-      this.dadosModeloSelecionado = null;
+      this.solicitacoes = [
+        {
+          modelo: "",
+          idModelo: 0,
+          producao: "",
+          processo: "",
+          marca: "",
+        },
+      ];
+
+      this.dadosModeloSelecionado = [];
+
+      this.dadosUser = {
+        nome: "",
+        matricula: "",
+        gerente: "",
+      };
+
+      this.dadoslocal = {
+        celula: null,
+        turno: "",
+        fabrica: "",
+      };
     },
   },
 
@@ -209,3 +345,32 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.solicitacoes {
+  margin-left: 1px;
+  padding: 5px;
+  width: 95%;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.delete i:hover {
+  animation: delete 1s ease;
+}
+
+@keyframes delete {
+  0% {
+    transform: scale(1);
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: scale(1.1);
+    transform: rotate(15deg);
+  }
+  100% {
+    transform: scale(1);
+    transform: rotate(0deg);
+  }
+}
+</style>
