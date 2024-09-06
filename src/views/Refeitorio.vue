@@ -9,7 +9,9 @@
               color="primary"
               class="col-8"
               v-model="reservarSabadoNaSexta"
-              :label="`Reservar sábado na sexta: ${reservarSabadoNaSexta === true ? 'Sim' : 'Não'}`"
+              :label="`Reservar sábado na sexta: ${
+                reservarSabadoNaSexta === true ? 'Sim' : 'Não'
+              }`"
               hide-details
               inset
               @change="salvaConfiguracao()"
@@ -86,7 +88,11 @@
         </div>
         <h5 class="mb-2">Ações</h5>
         <div class="row">
-          <router-link v-if="permissaoRefeitorio()" to="/refeitorio/reserva" class="col-lg-3 col-md-6 col-sm-6 mt-lg-0 mt-4">
+          <router-link
+            v-if="permissaoRefeitorio()"
+            to="/refeitorio/reserva"
+            class="col-lg-3 col-md-6 col-sm-6 mt-lg-0 mt-4"
+          >
             <mini-statistics-card
               :title="{ text: 'Reservar' }"
               :icon="{
@@ -98,8 +104,14 @@
           </router-link>
 
           <v-dialog full>
-            <template v-if="permissaoRefeitorio()" v-slot:activator="{ props: activatorProps }">
-              <div v-bind="activatorProps" class="col-lg-3 col-md-6 col-sm-6 mt-lg-0 mt-4 cursor-pointer">
+            <template
+              v-if="permissaoRefeitorio()"
+              v-slot:activator="{ props: activatorProps }"
+            >
+              <div
+                v-bind="activatorProps"
+                class="col-lg-3 col-md-6 col-sm-6 mt-lg-0 mt-4 cursor-pointer"
+              >
                 <mini-statistics-card
                   :title="{ text: 'Reservados' }"
                   :icon="{
@@ -112,7 +124,9 @@
             </template>
             <template v-slot:default="{ isActive }">
               <v-card class="z-4">
-                <v-card-title class="position-fixed fixed-top border-bottom d-flex justify-content-between bg-white">
+                <v-card-title
+                  class="position-fixed fixed-top border-bottom d-flex justify-content-between bg-white"
+                >
                   <h3>Reservas do Dia</h3>
                   <i
                     @click="isActive.value = false"
@@ -133,15 +147,26 @@
 
                 <v-card-actions>
                   <v-spacer></v-spacer>
-                  <v-btn color="danger" text="Fechar" variant="text" @click="isActive.value = false"></v-btn>
+                  <v-btn
+                    color="danger"
+                    text="Fechar"
+                    variant="text"
+                    @click="isActive.value = false"
+                  ></v-btn>
                 </v-card-actions>
               </v-card>
             </template>
           </v-dialog>
 
           <v-dialog max-width="800">
-            <template v-if="autorizaReservarSexta()" v-slot:activator="{ props: activatorProps }">
-              <div v-bind="activatorProps" class="col-lg-3 col-md-6 col-sm-6 mt-lg-0 mt-4 cursor-pointer">
+            <template
+              v-if="autorizaReservarSexta()"
+              v-slot:activator="{ props: activatorProps }"
+            >
+              <div
+                v-bind="activatorProps"
+                class="col-lg-3 col-md-6 col-sm-6 mt-lg-0 mt-4 cursor-pointer"
+              >
                 <mini-statistics-card
                   :title="{ text: 'Sábado/Feriado' }"
                   :icon="{
@@ -154,7 +179,9 @@
             </template>
             <template v-slot:default="{ isActive }">
               <v-card>
-                <v-card-title class="text-center border-bottom position-sticky fixed-top border-bottom bg-white">
+                <v-card-title
+                  class="text-center border-bottom position-sticky fixed-top border-bottom bg-white"
+                >
                   <h3>Reserva do sábado / Feriado</h3>
                   <div class="col-12 insercao-informacao">
                     <div class="col-12 row">
@@ -227,18 +254,37 @@
                   />
                 </v-card-item>
 
-                <v-card-actions class="position-fixed fixed-bottom bg-white border-top">
+                <v-card-actions
+                  class="position-fixed fixed-bottom bg-white border-top"
+                >
                   <v-spacer></v-spacer>
-                  <v-btn color="danger" text="Fechar" variant="flat" @click="isActive.value = false"></v-btn>
-                  <v-btn color="success" text="Salvar" @click="emitirSalvarColaboradores" variant="flat"></v-btn>
+                  <v-btn
+                    color="danger"
+                    text="Fechar"
+                    variant="flat"
+                    @click="isActive.value = false"
+                  ></v-btn>
+                  <v-btn
+                    color="success"
+                    text="Salvar"
+                    @click="emitirSalvarColaboradores"
+                    variant="flat"
+                  ></v-btn>
                 </v-card-actions>
               </v-card>
             </template>
           </v-dialog>
 
           <v-dialog max-width="800">
-            <template v-if="permissaoRefeitorio()" v-slot:activator="{ props: activatorProps }">
-              <div @click="buscaGerentes" v-bind="activatorProps" class="col-lg-3 col-md-6 col-sm-6 mt-lg-0 mt-4 cursor-pointer">
+            <template
+              v-if="permissaoRefeitorio()"
+              v-slot:activator="{ props: activatorProps }"
+            >
+              <div
+                @click="buscaGerentes"
+                v-bind="activatorProps"
+                class="col-lg-3 col-md-6 col-sm-6 mt-lg-0 mt-4 cursor-pointer"
+              >
                 <mini-statistics-card
                   :title="{ text: 'Relatórios' }"
                   :icon="{
@@ -255,16 +301,24 @@
                   <h3>Relatórios de reservas</h3>
                   <div class="col-12 row">
                     <div class="col-6 text-center mb-3">
-                      <v-btn @click="triagemRelatorio('Lanche')">Reservas diárias</v-btn>
+                      <v-btn @click="triagemRelatorio('Lanche')"
+                        >Reservas diárias</v-btn
+                      >
                     </div>
                     <div class="col-6 text-center mb-3">
-                      <v-btn @click="triagemRelatorio('Sábado')">Reserva do sábado</v-btn>
+                      <v-btn @click="triagemRelatorio('Sábado')"
+                        >Reserva do sábado</v-btn
+                      >
                     </div>
                     <div class="col-6 text-center">
-                      <v-btn @click="triagemRelatorio('QuantidadeSabado')">Quantidade para o sábado</v-btn>
+                      <v-btn @click="triagemRelatorio('QuantidadeSabado')"
+                        >Quantidade para o sábado</v-btn
+                      >
                     </div>
                     <div class="col-6 text-center">
-                      <v-btn @click="triagemRelatorio('Voucher')">Voucher para o sábado</v-btn>
+                      <v-btn @click="triagemRelatorio('Voucher')"
+                        >Voucher para o sábado</v-btn
+                      >
                     </div>
                   </div>
                 </v-card-title>
@@ -275,10 +329,18 @@
                     </div>
                     <div class="col-12 row">
                       <div class="col-4">
-                        <v-text-field type="date" label="Data inicial" v-model="dataInicial"></v-text-field>
+                        <v-text-field
+                          type="date"
+                          label="Data inicial"
+                          v-model="dataInicial"
+                        ></v-text-field>
                       </div>
                       <div class="col-4">
-                        <v-text-field type="date" label="Data final" v-model="dataFinal"></v-text-field>
+                        <v-text-field
+                          type="date"
+                          label="Data final"
+                          v-model="dataFinal"
+                        ></v-text-field>
                       </div>
                       <div class="col-4">
                         <v-select
@@ -291,7 +353,12 @@
 
                     <v-card-actions class="bg-white border-top">
                       <v-spacer></v-spacer>
-                      <v-btn color="danger" text="Fechar" variant="flat" @click="isActive.value = false"></v-btn>
+                      <v-btn
+                        color="danger"
+                        text="Fechar"
+                        variant="flat"
+                        @click="isActive.value = false"
+                      ></v-btn>
                       <v-btn
                         color="success"
                         text="Baixar"
@@ -301,14 +368,28 @@
                     </v-card-actions>
                   </div>
 
-                  <div v-if="gerarQuantidadeSabado" class="col-12 insercao-informacao">
+                  <div
+                    v-if="gerarQuantidadeSabado"
+                    class="col-12 insercao-informacao"
+                  >
                     <h4>Quantidade para sábado</h4>
 
-                    <v-text-field disabled class="col-4" type="date" label="Data" v-model="dataReserva"></v-text-field>
+                    <v-text-field
+                      disabled
+                      class="col-4"
+                      type="date"
+                      label="Data"
+                      v-model="dataReserva"
+                    ></v-text-field>
 
                     <v-card-actions class="bg-white border-top">
                       <v-spacer></v-spacer>
-                      <v-btn color="danger" text="Fechar" variant="flat" @click="isActive.value = false"></v-btn>
+                      <v-btn
+                        color="danger"
+                        text="Fechar"
+                        variant="flat"
+                        @click="isActive.value = false"
+                      ></v-btn>
                       <v-btn
                         color="success"
                         text="Baixar"
@@ -318,7 +399,10 @@
                     </v-card-actions>
                   </div>
 
-                  <div v-if="gerarVoucherSabado" class="col-12 insercao-informacao">
+                  <div
+                    v-if="gerarVoucherSabado"
+                    class="col-12 insercao-informacao"
+                  >
                     <h4>Voucher para o sábado</h4>
                     <v-select
                       class="col-6"
@@ -327,15 +411,28 @@
                       v-model="gerenteReservadoSelecionado"
                     ></v-select>
 
-                    <v-text-field disabled class="col-4" type="date" label="Data" v-model="dataReserva"></v-text-field>
+                    <v-text-field
+                      disabled
+                      class="col-4"
+                      type="date"
+                      label="Data"
+                      v-model="dataReserva"
+                    ></v-text-field>
 
                     <v-card-actions class="bg-white border-top">
                       <v-spacer></v-spacer>
-                      <v-btn color="danger" text="Fechar" variant="flat" @click="isActive.value = false"></v-btn>
+                      <v-btn
+                        color="danger"
+                        text="Fechar"
+                        variant="flat"
+                        @click="isActive.value = false"
+                      ></v-btn>
                       <v-btn
                         color="success"
                         text="Baixar"
-                        @click="geraVoucherPeloGerente(gerenteReservadoSelecionado)"
+                        @click="
+                          geraVoucherPeloGerente(gerenteReservadoSelecionado)
+                        "
                         variant="flat"
                       ></v-btn>
                     </v-card-actions>
@@ -345,9 +442,98 @@
             </template>
           </v-dialog>
         </div>
+
+        <div
+          v-if="permissaoRefeitorio() && reservasAmanhaDoDia.length > 0"
+          class="reservas mt-3"
+        >
+          <h5>Reservas</h5>
+          <div class="reserva-list">
+            <v-text-field
+              v-model="pesquisaReserva"
+              label="Pesquisar matrícula"
+              @update:modelValue="filtroReservas"
+            ></v-text-field>
+
+            <table class="tabela-reservas">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Matrícula</th>
+                  <th>Opção</th>
+                  <th>Data da Reserva</th>
+                  <th>Gerente</th>
+                  <th>Cancelar</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(reserva, reservaIndex) in reservasFiltradas"
+                  :key="reservaIndex"
+                >
+                  <td>{{ reserva.nome }}</td>
+                  <td>{{ reserva.matricula }}</td>
+                  <td>{{ reserva.opcao_selecionada }}</td>
+                  <td>{{ formatarData(reserva.data_reserva) }}</td>
+                  <td>{{ reserva.gerente }}</td>
+                  <td>
+                    <div class="text-center">
+                      <v-dialog
+                        v-model="confirmarCancelamento"
+                        max-width="400"
+                        persistent
+                      >
+                        <template v-slot:activator="{ props: activatorProps }">
+                          <v-btn v-bind="activatorProps"> Cancelar </v-btn>
+                        </template>
+
+                        <v-card
+                          color="danger"
+                          dark
+                          prepend-icon="mdi mdi-alert"
+                          text="Esse proceso não pode ser revertido, será necessário chamar o colaborador para agendar novamente. 
+                          Só cancele se tiver certeza!"
+                          title="Deseja cancelar esta reserva?"
+                        >
+                          <template v-slot:actions>
+                            <v-spacer></v-spacer>
+
+                            <v-btn
+                              @click="confirmarCancelamento = false"
+                              color="yellow-accent-1"
+                              variant="outlined"
+                              dark
+                            >
+                              Não Cancelar Reserva
+                            </v-btn>
+
+                            <v-btn
+                              @click="
+                                confirmarCancelamento = false;
+                                canclearReserva(reserva.id);
+                              "
+                              color="black"
+                              variant="outlined"
+                              dark
+                              class="mr-2"
+                            >
+                              Cancelar Reserva
+                            </v-btn>
+                          </template>
+                        </v-card>
+                      </v-dialog>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
+
+  <alert ref="alert" />
 </template>
 
 <script>
@@ -365,6 +551,7 @@ import { saveAs } from "file-saver";
 import { jsPDF } from "jspdf";
 import * as XLSX from "xlsx";
 import ip from "../ip";
+import alert from "./components/Alert.vue";
 
 export default {
   name: "ferramentas-lean",
@@ -374,6 +561,7 @@ export default {
     MiniStatisticsCard2,
     ConsumoRefeicao,
     ListagemColaborador,
+    alert,
   },
   data() {
     return {
@@ -394,6 +582,12 @@ export default {
       reservasAmanhaLancheConsumidas: [],
       reservasAmanhaLightConsumidas: [],
       reservasAmanhaConsumidas: [],
+
+      pesquisaReserva: "",
+      reservasFiltradas: [],
+      mostrarBotaoCancelar: null,
+
+      confirmarCancelamento: false,
 
       reservarSabadoNaSexta: false,
       dataAmanhaParaReserva: "",
@@ -445,6 +639,43 @@ export default {
 
     emitirSalvarColaboradores() {
       this.$refs.listagemColaborador.salvarColaboradoresSelecionados();
+    },
+
+    filtroReservas() {
+      this.reservasFiltradas = this.reservasAmanhaDoDia.filter((reserva) =>
+        reserva.matricula.includes(this.pesquisaReserva)
+      );
+    },
+
+    canclearReserva(id) {
+      axios
+        .delete(`http://${ip}:3048/delete-reserva`, { data: { id: id } })
+        .then(() => {
+          this.$refs.alert.mostrarAlerta(
+            "success",
+            "done_outline",
+            "Sucesso",
+            "Reserva cancelada."
+          );
+
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        })
+        .catch((error) => {
+          console.error("Erro ao cancelar reserva: ", error);
+          this.$refs.alert.mostrarAlerta(
+            "danger",
+            "report",
+            "Erro!",
+            "Erro ao cancelar reserva."
+          );
+        });
+    },
+
+    formatarData(data) {
+      const date = new Date(data);
+      return date.toLocaleDateString("pt-BR");
     },
 
     triagemRelatorio(caminho) {
@@ -583,14 +814,19 @@ export default {
     },
 
     buscaReservasAmanhaDoDia() {
-      axios.get(`http://${ip}:3048/buscaReservasAmanhaDoDia`).then((response) => {
-        this.reservasAmanhaDoDia = response.data.totais;
-        this.reservasAmanhaLanche = response.data.lanche;
-        this.reservasAmanhaLight = response.data.light;
-        this.reservasAmanhaLancheConsumidas = response.data.lancheConsumidas;
-        this.reservasAmanhaLightConsumidas = response.data.lightConsumidas;
-        this.reservasAmanhaConsumidas = response.data.consumidas;
-      });
+      axios
+        .get(`http://${ip}:3048/buscaReservasAmanhaDoDia`)
+        .then((response) => {
+          this.reservasAmanhaDoDia = response.data.totais;
+          this.reservasFiltradas - response.data.totais;
+          this.filtroReservas();
+
+          this.reservasAmanhaLanche = response.data.lanche;
+          this.reservasAmanhaLight = response.data.light;
+          this.reservasAmanhaLancheConsumidas = response.data.lancheConsumidas;
+          this.reservasAmanhaLightConsumidas = response.data.lightConsumidas;
+          this.reservasAmanhaConsumidas = response.data.consumidas;
+        });
     },
 
     buscaDadosGlobais() {
@@ -599,7 +835,7 @@ export default {
         .get(`http://${ip}:3048/buscaDadoGlobaisAuditorias`)
         .then((response) => {
           this.dadosGrafico = response.data;
-          console.log(response.data);
+
           this.processChartData();
           this.showChart = true;
         })
@@ -610,7 +846,20 @@ export default {
 
     processChartData() {
       this.chartData = {
-        labels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"],
+        labels: [
+          "Jan",
+          "Fev",
+          "Mar",
+          "Abr",
+          "Mai",
+          "Jun",
+          "Jul",
+          "Ago",
+          "Set",
+          "Out",
+          "Nov",
+          "Dez",
+        ],
         datasets: [
           {
             label: "Reservado",
@@ -647,7 +896,9 @@ export default {
     buscaSetores(gerente) {
       if (gerente) {
         axios
-          .get(`http://${ip}:3048/buscaSetores`, { params: { gerente: gerente } })
+          .get(`http://${ip}:3048/buscaSetores`, {
+            params: { gerente: gerente },
+          })
           .then((response) => {
             this.setores = response.data;
             this.disabledSetores = false;
@@ -662,7 +913,11 @@ export default {
       if (this.gerenteSelecionado && this.setores && this.dataReserva) {
         axios
           .get(`http://${ip}:3048/buscaColaboradoresPorSetor`, {
-            params: { gerente: this.gerenteSelecionado, setor: this.setorSelecionado, dataReserva: this.dataReserva },
+            params: {
+              gerente: this.gerenteSelecionado,
+              setor: this.setorSelecionado,
+              dataReserva: this.dataReserva,
+            },
           })
           .then((response) => {
             this.colaboradoresSabado = response.data;
@@ -681,14 +936,18 @@ export default {
     },
 
     buscaGerenteReservadoSabado() {
-      axios.get(`http://${ip}:3048/buscaGerenteReservadoSabado`).then((response) => {
-        this.gerenteReservado = response.data;
-      });
+      axios
+        .get(`http://${ip}:3048/buscaGerenteReservadoSabado`)
+        .then((response) => {
+          this.gerenteReservado = response.data;
+        });
     },
 
     geraVoucherPeloGerente(gerente) {
       axios
-        .get(`http://${ip}:3048/geraVoucherPeloGerente`, { params: { gerente: gerente, dataReserva: this.dataReserva } })
+        .get(`http://${ip}:3048/geraVoucherPeloGerente`, {
+          params: { gerente: gerente, dataReserva: this.dataReserva },
+        })
         .then((response) => {
           const pessoas = response.data;
 
@@ -703,7 +962,8 @@ export default {
 
           pessoas.forEach((pessoa, index) => {
             const xPos = marginX + (pageIndex % 3) * (cardWidth + marginX * 2);
-            const yPos = marginY + Math.floor(pageIndex / 3) * (cardHeight + marginY * 2);
+            const yPos =
+              marginY + Math.floor(pageIndex / 3) * (cardHeight + marginY * 2);
 
             this.addCard(doc, pessoa, xPos, yPos, cardWidth, cardHeight);
 
@@ -740,22 +1000,54 @@ export default {
 
       const lineHeight = 3;
 
-      doc.text(`Colaborador: ${pessoa.nome.split(" ")[0] + " " + pessoa.nome.split(" ").pop()}`, xPos + 1, yPos + 2);
       doc.text(
-        `Gerente: ${pessoa.gerente.split(" ")[0] + " " + pessoa.gerente.split(" ").pop()}`,
+        `Colaborador: ${
+          pessoa.nome.split(" ")[0] + " " + pessoa.nome.split(" ").pop()
+        }`,
+        xPos + 1,
+        yPos + 2
+      );
+      doc.text(
+        `Gerente: ${
+          pessoa.gerente.split(" ")[0] + " " + pessoa.gerente.split(" ").pop()
+        }`,
         xPos + 1,
         yPos + 2 + lineHeight
       );
-      doc.text(`Matrícula: ${pessoa.matricula}`, xPos + 1, yPos + 1 + lineHeight * 2);
-      doc.text(`Data da Reserva: ${new Date(pessoa.dataReserva).toLocaleDateString()}`, xPos + 1, yPos + 1 + lineHeight * 3);
-      doc.text(`Hora da Reserva: ${pessoa.horaReserva}`, xPos + 1, yPos + 1 + lineHeight * 4);
-      doc.text(`Usuário Criador: ${pessoa.usuarioCreate}`, xPos + 1, yPos + 1 + lineHeight * 5);
       doc.text(
-        `Gerente de Destino: ${pessoa.gerenteDestino.split(" ")[0] + " " + pessoa.gerenteDestino.split(" ").pop()}`,
+        `Matrícula: ${pessoa.matricula}`,
+        xPos + 1,
+        yPos + 1 + lineHeight * 2
+      );
+      doc.text(
+        `Data da Reserva: ${new Date(pessoa.dataReserva).toLocaleDateString()}`,
+        xPos + 1,
+        yPos + 1 + lineHeight * 3
+      );
+      doc.text(
+        `Hora da Reserva: ${pessoa.horaReserva}`,
+        xPos + 1,
+        yPos + 1 + lineHeight * 4
+      );
+      doc.text(
+        `Usuário Criador: ${pessoa.usuarioCreate}`,
+        xPos + 1,
+        yPos + 1 + lineHeight * 5
+      );
+      doc.text(
+        `Gerente de Destino: ${
+          pessoa.gerenteDestino.split(" ")[0] +
+          " " +
+          pessoa.gerenteDestino.split(" ").pop()
+        }`,
         xPos + 1,
         yPos + 1 + lineHeight * 6
       );
-      doc.text(`Setor de Destino: ${pessoa.setorDestino}`, xPos + 1, yPos + 1 + lineHeight * 7);
+      doc.text(
+        `Setor de Destino: ${pessoa.setorDestino}`,
+        xPos + 1,
+        yPos + 1 + lineHeight * 7
+      );
     },
 
     geraRelatorioLancheSabado(tipoRelatorio) {
@@ -769,7 +1061,13 @@ export default {
           },
         })
         .then((response) => {
-          this.gerarXlsx(response.data, tipoRelatorio, this.dataInicial, this.dataFinal, this.turnoSelecionado);
+          this.gerarXlsx(
+            response.data,
+            tipoRelatorio,
+            this.dataInicial,
+            this.dataFinal,
+            this.turnoSelecionado
+          );
         })
         .catch((error) => {
           console.error("Erro ao buscar dados de relatório: ", error);
@@ -810,17 +1108,29 @@ export default {
 
       const worksheet = XLSX.utils.json_to_sheet(dadosFormatados);
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, `Relatório ${tipoRelatorio}`);
+      XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        `Relatório ${tipoRelatorio}`
+      );
 
-      const xlsxBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+      const xlsxBuffer = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array",
+      });
 
       const blob = new Blob([xlsxBuffer], { type: "application/octet-stream" });
-      saveAs(blob, `Relatorio ${tipoRelatorio}:${turno}, ${dataInicial}-${dataFinal}.xlsx`);
+      saveAs(
+        blob,
+        `Relatorio ${tipoRelatorio}:${turno}, ${dataInicial}-${dataFinal}.xlsx`
+      );
     },
 
     geraRelatorioQuantidadeSabado(dataReserva) {
       axios
-        .get(`http://${ip}:3048/geraRelatorioQuantidadeSabado`, { params: { dataReserva: dataReserva } })
+        .get(`http://${ip}:3048/geraRelatorioQuantidadeSabado`, {
+          params: { dataReserva: dataReserva },
+        })
         .then((response) => {
           this.gerarXlsxQuantidadeSabado(response.data, dataReserva);
         })
@@ -839,9 +1149,16 @@ export default {
 
       const worksheet = XLSX.utils.json_to_sheet(dadosFormatados);
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, `Relatório ${dataReserva}`);
+      XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        `Relatório ${dataReserva}`
+      );
 
-      const xlsxBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+      const xlsxBuffer = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array",
+      });
 
       const blob = new Blob([xlsxBuffer], { type: "application/octet-stream" });
       saveAs(blob, `Relatorio ${dataReserva}.xlsx`);
@@ -849,3 +1166,43 @@ export default {
   },
 };
 </script>
+
+<style>
+.tabela-reservas {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.tabela-reservas td,
+.tabela-reservas th {
+  border: 1px solid #ddd;
+  padding: 10px;
+}
+
+.tabela-reservas tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.tabela-reservas tr:hover {
+  background-color: #ddd;
+  cursor: pointer;
+}
+
+.tabela-reservas th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: left;
+  background-color: #04aa6d;
+  color: white;
+}
+
+.tabela-reservas button {
+  background-color: rgb(217, 83, 79);
+  border-radius: 10px;
+  color: #fff;
+}
+
+.tabela-reservas button:hover {
+  background-color: rgb(241, 124, 120);
+}
+</style>
