@@ -441,6 +441,7 @@ app.get("/pacoteSolicitacao", async (req, res) => {
             s.abastecendo,
             s.cancelado,
             s.marca,
+            s.produto_salvo,
             COALESCE(
                 json_agg(
                     json_build_object(
@@ -474,7 +475,8 @@ app.get("/pacoteSolicitacao", async (req, res) => {
             s.processo,
             s.abastecendo,
             s.cancelado,
-            s.marca;
+            s.marca,
+            s.produto_salvo;
 `);
     return res.status(200).json(solicitacao.rows);
   } catch (error) {
@@ -486,18 +488,14 @@ app.get("/pacoteSolicitacao", async (req, res) => {
 
 app.get("/getProdutoSalvo", async (req, res) => {
   try {
-    const id = req.query.id;
-
     const getProdutoSalvos = await pool.query(
       `
-        SELECT * 
+        SELECT *
         FROM
           quimico.solicitacoes_pacotes
-        WHERE 
-          produto_salvo = true AND
-          id = $1
-      `,
-      [id]
+        WHERE
+          produto_salvo = true
+      `
     );
 
     res.status(200).send(getProdutoSalvos.rows);
@@ -532,8 +530,16 @@ app.post("/manipulaAbastecimento", async (req, res) => {
     }
 
     if (abastecimento.instrucao === "salvar") {
+      // console.log(abastecimento);
+
       await pool.query(
-        `UPDATE quimico.solicitacoes_pacotes SET abastecimento = $1 WHERE id = $2`,
+        `
+        UPDATE quimico.solicitacoes_pacotes 
+        SET 
+          abastecimento = $1,
+          produto_salvo = true
+        WHERE 
+          id = $2`,
         [abastecimento.abastecimentos, abastecimento.id]
       );
       return res.status(200).json({ message: "Salvo com sucesso" });

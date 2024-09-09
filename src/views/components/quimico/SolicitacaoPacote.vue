@@ -244,6 +244,7 @@ export default {
           params: { processo: processo },
         })
         .then((response) => {
+          this.dadosModelo = [];
           this.dadosModelo.push(response.data);
         })
         .catch((error) => {
@@ -275,10 +276,6 @@ export default {
     },
 
     salvarSolicitacao() {
-      console.log(this.solicitacoes);
-      console.log(this.dadoslocal);
-      console.log(this.dadosUser);
-
       axios
         .post(`http://${ip}:3045/salvarSolicitacaoPacote`, {
           solicitacoes: this.solicitacoes,

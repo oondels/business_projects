@@ -35,9 +35,10 @@
     </v-select>
 
     <v-btn
-      v-if="permissoes"
+      v-if="permissoes && solicitacoesPacoteFiltrada.length > 0"
       @click="baixaPlano()"
-      class="col-4"
+      class="mt-4 col-4"
+      color="success"
       text="Baixar"
     ></v-btn>
   </div>
@@ -169,7 +170,7 @@
               ></v-btn>
 
               <v-btn
-                v-if="!solicitacao.cancelado"
+                v-if="!solicitacao.cancelado && solicitacao.abastecendo"
                 @click="manipulaAbastecimento(solicitacao.id, 'salvar')"
                 color="warning"
                 variant="flat"
@@ -230,7 +231,7 @@ export default {
         marca: "",
       },
 
-      produtoSalvoTeste: {},
+      produtosSalvos: {},
 
       matriculaDelete: [],
 
@@ -254,6 +255,7 @@ export default {
   mounted() {
     this.buscaSolicitacoes();
     this.filtroSolicitacoes();
+    this.getProdutoSalvo();
   },
 
   computed: {
@@ -369,10 +371,24 @@ export default {
         let solicitacao = this.solicitacoesPacote.find(
           (s) => s.id === solicitacaoId
         );
+
+        // Coletando informação do resíduo (Se um produto tiver sido abstecido e salvo sem finalizar)
+        let solicitacaoResiduoData = this.produtosSalvos.find(
+          (data) => data.id === solicitacaoId
+        );
+
         if (solicitacao) {
           let produtoData = solicitacao.produtos.find(
             (p) => p.id === produtoId
           );
+
+          let residuo = null;
+
+          if (solicitacao.produto_salvo) {
+            residuo = solicitacaoResiduoData.abastecimento.find(
+              (res) => res.id === produtoId
+            );
+          }
 
           if (produtoData) {
             let totalFinal = produtoData.consumo_previo * solicitacao.producao;
@@ -386,8 +402,8 @@ export default {
               "2° Horário": consumoPrevio.toFixed(2),
               "3° Horário": consumoPrevio.toFixed(2),
               "4° Horário": consumoPrevio.toFixed(2),
-              Final: totalFinal.toFixed(2),
-              Resíduo: null,
+              Final: residuo ? residuo["Final"] : totalFinal.toFixed(2),
+              Resíduo: residuo ? residuo["Resíduo"] : null,
               abastecedor: this.decodeJwt().usuario,
               celula: solicitacao.celula,
               mes: data.getMonth() + 1,
@@ -408,20 +424,13 @@ export default {
       return produto;
     },
 
-    // INFO: Continuar daqui... (Ver solução para manter a informação de produto que tiveram dados de residuo ou final alteradas e salvas)
-    getProdutoSalvo(id) {
+    getProdutoSalvo() {
       axios
-        .get(`http://${ip}:3045/getProdutoSalvo`, {
-          params: {
-            id: id,
-          },
-        })
+        .get(`http://${ip}:3045/getProdutoSalvo`, {})
         .then((response) => {
-          this.produtoSalvoTeste = response.data;
+          this.produtosSalvos = response.data;
         })
-        .catch((error) => {
-          console.error("Erro ao consultar produtos salvos: ", error);
-        });
+        .catch();
     },
 
     manipulaAbastecimento(id, instrucao) {
@@ -494,7 +503,6 @@ export default {
         .get(`http://${ip}:3045/pacoteSolicitacao`)
         .then((response) => {
           this.solicitacoesPacote = response.data;
-          // console.log(this.solicitacoesPacote);
 
           this.filtroSolicitacoes();
         })
