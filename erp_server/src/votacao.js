@@ -5,7 +5,7 @@ import { pool } from "./db.cjs";
 
 const app = express();
 
-const port = 3070;
+const port = 3022;
 app.use(cors());
 app.use(express.json());
 
@@ -17,8 +17,13 @@ app.post("/register-candidate", async (req, res) => {
   try {
     const candidateData = req.body;
 
-    if (!candidateData.registration || typeof candidateData.registration !== "number") {
-      return res.status(400).json({ result: "Matrícula do Colaborador(a) não fornecido!" });
+    if (
+      !candidateData.registration ||
+      typeof candidateData.registration !== "number"
+    ) {
+      return res
+        .status(400)
+        .json({ result: "Matrícula do Colaborador(a) não fornecido!" });
     }
 
     if (!candidateData.poll) {
@@ -34,7 +39,12 @@ app.post("/register-candidate", async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ result: "Colaborador(a) não Encontrado. Verifique a digitação do crachá!" });
+      return res
+        .status(404)
+        .json({
+          result:
+            "Colaborador(a) não Encontrado. Verifique a digitação do crachá!",
+        });
     }
 
     const queryEmployee = result.rows[0];
@@ -48,17 +58,28 @@ app.post("/register-candidate", async (req, res) => {
     );
 
     if (registredEmployee.rows.length > 0) {
-      return res.status(401).json({ result: "Colaborador(a) já esta registrado na competição." });
+      return res
+        .status(401)
+        .json({ result: "Colaborador(a) já esta registrado na competição." });
     }
 
     await pool.query(
       `
         INSERT INTO votacao.candidatos (name, matricula, gerente, nome_setor, eleicao_id, funcao) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
       `,
-      [queryEmployee.nome, candidateData.registration, queryEmployee.gerente, queryEmployee.nome_setor, candidateData.poll, queryEmployee.funcao]
+      [
+        queryEmployee.nome,
+        candidateData.registration,
+        queryEmployee.gerente,
+        queryEmployee.nome_setor,
+        candidateData.poll,
+        queryEmployee.funcao,
+      ]
     );
 
-    return res.status(201).json({ result: `Cadastrado o colaborador(a): ${queryEmployee.nome}` });
+    return res
+      .status(201)
+      .json({ result: `Cadastrado o colaborador(a): ${queryEmployee.nome}` });
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({ result: "Erro ao cadastrar Colaborador(a)" });
@@ -151,7 +172,9 @@ app.post("/register-polling", async (req, res) => {
     }
 
     if (start > end) {
-      return res.status(400).send("Data de término deve ser posterior à data de início.");
+      return res
+        .status(400)
+        .send("Data de término deve ser posterior à data de início.");
     }
 
     await pool.query(

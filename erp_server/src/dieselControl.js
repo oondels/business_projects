@@ -1,13 +1,17 @@
 import cors from "cors";
+import dotenv from "dotenv";
 import express from "express";
 import http from "http";
+import nodeMailer from "nodemailer";
 import { WebSocketServer } from "ws";
 import { pool } from "./db.cjs";
 
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
-const port = 3050;
+const port = 3021;
+
+dotenv.config();
 
 app.use(cors());
 app.use(express.json());
@@ -37,6 +41,56 @@ wss.on("connection", (ws) => {
     clearInterval(intervalId);
     console.log("Socket disconnected");
   });
+});
+
+// Configuração de Email
+const transporter = nodeMailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.EMAIL,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+app.post("/send-email", async (req, res) => {
+  await transporter
+    .sendMail({
+      to: "hendrius.santana@grupodass.com.br",
+      subject: `⚠️ Nível de Diesel Baixo ⚠️`,
+      html: `
+            <div style="font-family: Arial, sans-serif; color: #FF6F61; line-height: 1.6; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+              <div style="text-align: center; margin-bottom: 20px;">
+                <h1 style="color: #FF6F61; font-size: 24px; margin: 0;">Nível de Diesel Crítico</h1>
+              </div>
+
+              <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                <h2 style="color: #FF6F61; font-size: 20px; margin: 0 0 10px; text-align: center;"><strong>Automação Dass</strong></h2>
+
+                <h1 style="color: #0d9757; font-size: 22px; margin-bottom: 10px;">Mensagem:</h1>
+                <p style="font-size: 16px; color: #555; background-color: #f4f4f4; padding: 15px; border-radius: 5px; border: 1px solid #ddd;">
+                  O volume de Diesel atingiu nível crítico. É necessário fazer solicitação de compra para abastecimento!
+                </p>
+              </div>
+
+              <div style="text-align: center; margin-top: 30px; color: #777; font-size: 14px;">
+                <p>Este e-mail foi gerado automaticamente. Por favor, não responda.</p>
+              </div>
+          </div>
+            `,
+    })
+    .then(() => {
+      return res
+        .status(200)
+        .send("Email enviado, responderei o mais rápido possível.");
+    })
+    .catch((error) => {
+      console.error("Erro sending email: ", error);
+      return res
+        .status(404)
+        .send("Erro de comunicação... Estamos trabalhando para consertar.");
+    });
 });
 
 app.post("/post-diesel", async (req, res) => {

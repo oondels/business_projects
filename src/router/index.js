@@ -5,7 +5,7 @@ import Inicio from "../views/Inicio.vue";
 import SignIn from "../views/SignIn.vue";
 import SignUp from "../views/SignUp.vue";
 
-import TreinamentoPCP from "../views/components/pcp/CadastroTreinamentoPcp.vue";
+import Treinamentos from "../views/CadastroTreinamento.vue";
 import FerramentasLean from "../views/FerramentasLean.vue";
 import Informativo from "../views/Informativo.vue";
 import InformativoResultado from "../views/InformativoResultado.vue";
@@ -111,10 +111,9 @@ const routes = [
   },
 
   {
-    path: "/pcp/treinamento",
-    name: "Treinamento PCP",
-    component: TreinamentoPCP,
-    meta: { requiresAuth: true, allowedSectors: ["Automação", "PPCP"] },
+    path: "/treinamentos",
+    name: "Treinamentos",
+    component: Treinamentos,
   },
 
   {

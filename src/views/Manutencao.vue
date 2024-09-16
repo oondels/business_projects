@@ -1,8 +1,15 @@
 <template>
-  <div class="container my-5 p-4 bg-light rounded shadow-sm">
-    <h5 class="mb-3 text-primary">Manual de Máquinas</h5>
+  <div
+    class="d-flex flex-column junstify-content-center align-items-center container my-5 p-4 bg-light rounded shadow-sm"
+  >
+    <div
+      class="title-hello d-flex flex-row junstify-content-center align-items-center"
+    >
+      <img src="../../public/img/icons/manutencao.png" alt="" />
+      <h5 class="ml-5 mb-3 text-primary">Manual de Máquinas</h5>
+    </div>
 
-    <div class="mb-3" v-if="permissaoManut()">
+    <div class="col-12 m-4" v-if="permissaoManut()">
       <v-expansion-panels>
         <v-expansion-panel title="Cadastrar Máquina">
           <v-expansion-panel-text>
@@ -12,7 +19,7 @@
       </v-expansion-panels>
     </div>
 
-    <div class="row mb-4">
+    <div class="col-12 row mb-4">
       <div class="col-6 mb-3 mb-md-0">
         <v-combobox
           variant="outlined"
@@ -46,33 +53,44 @@
     </div>
 
     <div>
-      <div class="mb-3">
+      <div
+        class="d-flex flex-column justify-content-center align-items-center mb-1"
+      >
         <p class="text-primary">Deseja aplicar um filtro?</p>
-        <button
-          :class="{
-            'btn-success': tipo === 'Mecânico',
-          }"
-          class="btn btn-secondary me-2"
-          @click="filtroDefeitos('Mecânico')"
-        >
-          Mecânico
-        </button>
-        <button
-          :class="{ 'btn-success': tipo === 'Operacional' }"
-          class="btn btn-secondary"
-          @click="filtroDefeitos('Operacional')"
-        >
-          Operacional
-        </button>
+        <div>
+          <button
+            :class="{
+              'btn-success': tipo === 'Mecânico',
+            }"
+            class="btn btn-secondary me-2"
+            @click="filtroDefeitos('Mecânico')"
+          >
+            Mecânico
+          </button>
+          <button
+            :class="{ 'btn-success': tipo === 'Operacional' }"
+            class="btn btn-secondary"
+            @click="filtroDefeitos('Operacional')"
+          >
+            Operacional
+          </button>
+        </div>
       </div>
-      <div v-for="(maquinas, setorNome) in maquinasObject" :key="setorNome">
-        <h5 class="my-4 text-blue">{{ setorNome }}</h5>
+      <div
+        class="col-12"
+        v-for="(maquinas, setorNome) in maquinasObject"
+        :key="setorNome"
+      >
+        <h5 class="text-center my-4 text-blue">{{ setorNome }}</h5>
         <div v-if="maquinas">
           <div v-for="(categorias, maquinaNome) in maquinas" :key="maquinaNome">
             <v-expansion-panels>
               <v-expansion-panel class="mb-3" :title="maquinaNome">
                 <v-expansion-panel-text>
-                  <div v-for="(problemas, categoriaNome) in categorias" :key="categoriaNome">
+                  <div
+                    v-for="(problemas, categoriaNome) in categorias"
+                    :key="categoriaNome"
+                  >
                     <v-expansion-panels>
                       <v-expansion-panel class="mb-2" :title="categoriaNome">
                         <v-expansion-panel-text>
@@ -87,18 +105,24 @@
                                   rounded="xl"
                                   class="list-group-item d-flex justify-content-between align-items-center border-bottom border-1r"
                                 >
-                                  <v-list-item-title class="text-wrap">{{ problema }}</v-list-item-title>
+                                  <v-list-item-title class="text-wrap">{{
+                                    problema
+                                  }}</v-list-item-title>
                                   <template v-slot:append>
-                                    <i style="color: #2196f3; font-size: 1.25rem" class="material-icons-round opacity-10 fs-4">{{
-                                      getIcon(problema)
-                                    }}</i>
+                                    <i
+                                      style="color: #2196f3; font-size: 1.25rem"
+                                      class="material-icons-round opacity-10 fs-4"
+                                      >{{ getIcon(problema) }}</i
+                                    >
                                   </template>
                                 </v-list-item>
                               </v-list>
                             </v-card>
                           </div>
                           <div v-else>
-                            <p class="text-muted">Sem Informações Cadastradas para esta categoria.</p>
+                            <p class="text-muted">
+                              Sem Informações Cadastradas para esta categoria.
+                            </p>
                           </div>
                         </v-expansion-panel-text>
                       </v-expansion-panel>
@@ -169,7 +193,9 @@ export default {
     queryMaquinas(filtro) {
       this.mostraDados = false;
       axios
-        .get(`http://${ip}:3042/api/manual_maqs`, { params: { filtro: filtro } })
+        .get(`http://${ip}:3042/api/manual_maqs`, {
+          params: { filtro: filtro },
+        })
         .then((response) => {
           this.maquinasObject = response.data.manualMaquinas;
           this.maquinas = response.data.maquinas;
