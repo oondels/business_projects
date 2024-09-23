@@ -5,35 +5,90 @@
     <div class="container-cadastro">
       <div class="cadastro-treinamento">
         <div style="min-width: 430px" class="colaborador p-2">
-          <h6>Cadastro Colaborador</h6>
-          <v-text-field
-            v-model="dadosColaborador.matricula"
-            type="number"
-            @keyup="getEmployee(dadosColaborador.matricula)"
-            label="Matrícula"
-          ></v-text-field>
+          <h6>Cadastro Colaborador(es)</h6>
+
+          <v-combobox
+            v-model="gerenteSelecionadoColaborador"
+            @update:modelValue="buscaSetores(gerenteSelecionadoColaborador)"
+            :items="gerentes"
+            item-title="nome"
+            item-value="matricula"
+            label="Gerente do Colaborador"
+          ></v-combobox>
+
+          <v-combobox
+            :items="setoresGerenteColaborador"
+            label="Setor do Colaborador"
+            v-model="setorGerente"
+            @update:modelValue="searchEmloyeeByDepartment(setorGerente)"
+          ></v-combobox>
+
+          <!-- Listagem de Colaboradores -->
+          <v-dialog v-if="setorGerente" max-width="800">
+            <template v-slot:activator="{ props: activatorProps }">
+              <v-btn
+                v-bind="activatorProps"
+                color="surface-variant"
+                text="Selecionar Colaboradores"
+                variant="flat"
+              ></v-btn>
+            </template>
+
+            <template v-slot:default="{ isActive }">
+              <v-card title="Colaboradores">
+                <v-card-text>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Selecionar</th>
+                        <th>Nome</th>
+                        <th>Função</th>
+                        <th>Gerente</th>
+                        <th>Setor</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      <tr
+                        v-for="colaborador in employeesByDepartment"
+                        :key="colaborador.nome"
+                      >
+                        <td>
+                          <input
+                            @click="selectEmployee(colaborador)"
+                            v-model="colaborador.select"
+                            type="checkbox"
+                          />
+                        </td>
+                        <td>{{ colaborador.nome }}</td>
+                        <td>{{ colaborador.funcao }}</td>
+                        <td>{{ colaborador.gerente }}</td>
+                        <td>{{ colaborador.nome_setor }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </v-card-text>
+
+                <v-card-actions>
+                  <v-spacer></v-spacer>
+
+                  <v-btn text="Salvar" @click="isActive.value = false"></v-btn>
+                </v-card-actions>
+              </v-card>
+            </template>
+          </v-dialog>
+
+          <div class="colaboradores-treinamento"></div>
 
           <v-text-field
-            v-model="dadosColaborador.nome"
-            label="Nome"
-            disabled
-          ></v-text-field>
-
-          <v-text-field
-            v-model="dadosColaborador.setor"
-            label="Setor"
-            disabled
-          ></v-text-field>
-
-          <v-text-field
-            v-model="dadosColaborador.treinamento"
+            v-model="dadosTreinamento.nome"
             label="Treinamento"
           ></v-text-field>
 
           <v-combobox
             label="Setor do Treinamento"
             :items="setores"
-            v-model="setorTreinamento"
+            v-model="dadosTreinamento.setor"
           ></v-combobox>
         </div>
 
@@ -42,26 +97,24 @@
           <v-text-field
             type="number"
             label="Célula"
-            v-model="dadosColaborador.celula"
+            v-model="dadosTreinamento.celula"
           ></v-text-field>
 
           <v-combobox
             :items="['Fábrica 1', 'Fábrica 2', 'Fábrica 3']"
             label="Fábrica"
-            v-model="dadosColaborador.fabrica"
+            v-model="dadosTreinamento.fabrica"
           ></v-combobox>
 
           <v-combobox
             v-model="gerenteSelecionado"
             :items="gerentes"
-            item-title="nome"
-            item-value="matricula"
             label="Nome Gerente"
             clearable
           ></v-combobox>
 
           <v-text-field
-            v-model="dadosColaborador.data"
+            v-model="dadosTreinamento.data"
             type="date"
             label="Data"
           ></v-text-field>
@@ -152,29 +205,124 @@
                     !training.cancelado,
                 }"
               >
-                <!-- :class="'training-' + training.id" -->
                 <td
                   class="col-1"
                   v-if="!training.cancelado && !training.iniciado"
                 >
-                  <i
-                    @click="startTraining(training.id)"
-                    role="button"
-                    class="play-button material-symbols-outlined"
-                  >
-                    play_arrow
-                  </i>
+                  <v-dialog max-width="500">
+                    <template v-slot:activator="{ props: activatorProps }">
+                      <i
+                        v-bind="activatorProps"
+                        role="button"
+                        class="play-button material-symbols-outlined"
+                      >
+                        play_arrow
+                      </i>
+                    </template>
+
+                    <template v-slot:default="{ isActive }">
+                      <v-card>
+                        <v-card-title>
+                          <strong>Bipe o Crachá</strong>
+                        </v-card-title>
+
+                        <v-card-text>
+                          <div class="employees-check">
+                            <ul>
+                              <li
+                                v-for="(employee, employeeId) in formateNames(
+                                  training
+                                )"
+                                :key="employeeId"
+                                :class="
+                                  employeesCheckedBarcode.includes(employee)
+                                    ? 'checkedBarcode'
+                                    : 'notChecked'
+                                "
+                              >
+                                <span class="employee-name">{{
+                                  employee
+                                }}</span>
+                                <span class="status-icon">
+                                  <i
+                                    v-if="
+                                      employeesCheckedBarcode.includes(employee)
+                                    "
+                                    class="material-icons"
+                                  >
+                                    check_circle
+                                  </i>
+                                  <i v-else class="material-icons"> cancel </i>
+                                </span>
+                              </li>
+                            </ul>
+                          </div>
+
+                          <v-text-field
+                            v-model="barCode"
+                            @update:modelValue="checkBarCode(barCode)"
+                            label="Código do crachá"
+                          ></v-text-field>
+                        </v-card-text>
+
+                        <template v-slot:actions>
+                          <v-spacer></v-spacer>
+
+                          <v-btn
+                            @click="isActive.value = false"
+                            color="danger"
+                            variant="outlined"
+                            >Fechar
+                          </v-btn>
+
+                          <v-btn
+                            @click="
+                              startTraining(
+                                training.ids,
+                                formateNames(training)
+                              ),
+                                (isActive.value = false)
+                            "
+                            variant="outlined"
+                            color="success"
+                          >
+                            Iniciar Treinamento
+                          </v-btn>
+                        </template>
+                      </v-card>
+                    </template>
+                  </v-dialog>
                 </td>
 
                 <td v-else-if="!training.cancelado && training.iniciado">
                   <v-dialog v-model="stop" max-width="400" persistent>
                     <template v-slot:activator="{ props: activatorProps }">
+                      <span v-if="!training.pausado">
+                        <i
+                          v-bind="activatorProps"
+                          role="button"
+                          class="stop-button material-symbols-outlined"
+                          @click="setResultObject(training)"
+                        >
+                          stop_circle
+                        </i>
+
+                        <i
+                          role="button"
+                          @click="pauseTraining(training, 'pause')"
+                          class="material-symbols-outlined"
+                        >
+                          pause_circle
+                        </i>
+                      </span>
+
                       <i
-                        v-bind="activatorProps"
+                        v-if="training.pausado"
                         role="button"
-                        class="stop-button material-symbols-outlined"
+                        class="material-symbols-outlined"
+                        @click="pauseTraining(training, 'play')"
                       >
-                        stop_circle
+                        play_pause
                       </i>
                     </template>
 
@@ -184,17 +332,31 @@
                       </v-card-title>
 
                       <v-card-text>
-                        <v-textarea
-                          v-model="resultEmployee.obs"
-                          label="Descrição"
-                        ></v-textarea>
-                        <v-checkbox
-                          :label="
-                            resultEmployee.result ? 'Aprovado' : 'Reprovado'
-                          "
-                          :color="resultEmployee.result ? 'success' : 'danger'"
-                          v-model="resultEmployee.result"
-                        ></v-checkbox>
+                        <div
+                          v-for="(employee, employeeId) in formateNames(
+                            training
+                          )"
+                          :key="employeeId"
+                        >
+                          <v-text-field
+                            :label="employee"
+                            v-model="avaliacaoColaborador[employee].obs"
+                          ></v-text-field>
+
+                          <v-checkbox
+                            :label="
+                              avaliacaoColaborador[employee].result
+                                ? 'Aprovado'
+                                : 'Reprovado'
+                            "
+                            :color="
+                              avaliacaoColaborador[employee].result
+                                ? 'success'
+                                : 'danger'
+                            "
+                            v-model="avaliacaoColaborador[employee].result"
+                          ></v-checkbox>
+                        </div>
                       </v-card-text>
 
                       <template v-slot:actions>
@@ -210,7 +372,7 @@
                         <v-btn
                           variant="outlined"
                           color="success"
-                          @click="(stop = false), stopTraining(training.id)"
+                          @click="(stop = false), stopTraining()"
                         >
                           Finalizar Treinamento
                         </v-btn>
@@ -224,12 +386,15 @@
                 </td>
 
                 <td v-else></td>
-                <td class="col-2">{{ formateName(training.nome) }}</td>
+                <td class="col-2">
+                  {{ formateNames(training.nomes_colaboradores, "format") }}
+                </td>
                 <td class="col-3">{{ training.treinamento }}</td>
                 <td>{{ formatteDate(training.data_treinamento) }}</td>
                 <td>{{ training.celula }}</td>
-                <td class="col-status" v-if="training.iniciado">
-                  Em andamento
+                <td class="col-status" v-if="training.pausado">Pausado</td>
+                <td class="col-status" v-else-if="training.iniciado">
+                  Pausado
                 </td>
                 <td class="col-status" v-else-if="training.cancelado">
                   Cancelado
@@ -239,7 +404,7 @@
                 <td v-if="!training.cancelado && !training.iniciado">
                   <CaixaConfirmacao
                     :motivo="true"
-                    @agreeEmit="cancelTraining($event, training.id)"
+                    @agreeEmit="cancelTraining($event, training.ids)"
                   />
                 </td>
                 <td v-else></td>
@@ -262,7 +427,7 @@
                 <th>Data</th>
                 <th>Instrutor</th>
                 <th>Tempo</th>
-                <th class="col-2">Resultado</th>
+                <!-- <th class="col-2">Resultado</th> -->
               </tr>
             </thead>
 
@@ -274,14 +439,16 @@
                 @mouseover="hoverDelete = training.id"
                 @mouseleave="hoverDelete = null"
               >
-                <td>{{ formateName(training.nome) }}</td>
+                <td>
+                  {{ formateNames(training.nomes_colaboradores, "format") }}
+                </td>
                 <td>{{ training.treinamento }}</td>
                 <td>{{ formatteDate(training.data_treinamento) }}</td>
                 <td>{{ training.start_treinamento_nome }}</td>
                 <td>
                   {{ getTrainingTime(training.date_inicio, training.date_fim) }}
                 </td>
-                <td
+                <!-- <td
                   :class="[
                     'text-center col-2',
                     training.aprovado ? 'approved' : 'disapproved',
@@ -290,7 +457,7 @@
                   <i class="material-symbols-outlined">
                     {{ training.aprovado ? "done_outline" : "close" }}
                   </i>
-                </td>
+                </td> -->
               </tr>
             </tbody>
           </table>
@@ -317,23 +484,32 @@ export default {
   data() {
     return {
       gerentes: [],
+
       gerenteSelecionado: null,
-      dadosColaborador: {
-        matricula: null,
+      gerenteSelecionadoColaborador: "",
+      setoresGerenteColaborador: [],
+      setorGerente: "",
+      employeesByDepartment: {},
+      dadosTreinamento: {
         nome: "",
         setor: "",
-        treinamento: "",
         data: null,
         celula: null,
         fabrica: "",
       },
+
+      dadosColaboradores: [],
 
       trainingsFiltered: [],
       trainings: [],
       finishedTrainingsFiltered: [],
       finishedTrainings: [],
 
-      setorTreinamento: "",
+      barCode: null,
+      employeesCheckedBarcode: [],
+
+      avaliacaoColaborador: {},
+      resultColaborador: {},
 
       setores: ["PCP", "MELHORIA CONTÍNUA", "MANUTENCAO"],
       setorFiltro: "",
@@ -347,16 +523,13 @@ export default {
       hoverDelete: null,
 
       stop: false,
-      resultEmployee: {
-        obs: "",
-        result: null,
-      },
     };
   },
 
   mounted() {
     this.getAllManagers();
     this.getAllTrainings();
+    this.getAllFinishedTrainings();
     this.trainingsFilter();
   },
 
@@ -401,11 +574,33 @@ export default {
       return date.toLocaleString("pt-BR", options);
     },
 
-    formateName(fullName) {
-      const names = fullName.split(" ");
-      const firstName = names[0];
-      const lastName = names[names.length - 1];
-      return `${firstName} ${lastName}`;
+    formateNames(names, command) {
+      if (command === "format") {
+        let newNames = "";
+
+        names
+          .split(",")
+          .map((name) => name.trim())
+          .forEach((name) => {
+            const nameSplited = name.split(" ");
+            const firstName = nameSplited[0];
+            const lastName = nameSplited[nameSplited.length - 1];
+
+            const newName = `${firstName} ${lastName}`;
+            newNames += `${newName} | `;
+          });
+        return newNames;
+      }
+
+      let newNames = [];
+
+      names.nomes_colaboradores
+        .split(",")
+        .map((name) => name.trim())
+        .forEach((name) => {
+          newNames.push(name);
+        });
+      return newNames;
     },
 
     getTrainingTime(start, end) {
@@ -453,26 +648,25 @@ export default {
     },
 
     postTraining() {
-      if (
-        !this.dadosColaborador.nome ||
-        !this.dadosColaborador.matricula ||
-        !this.dadosColaborador.setor ||
-        !this.dadosColaborador.treinamento ||
-        !this.dadosColaborador.data ||
-        !this.dadosColaborador.fabrica ||
-        !this.dadosColaborador.celula ||
-        !this.setorTreinamento ||
-        !this.gerenteSelecionado
-      ) {
-        return this.$refs.alert.mostrarAlerta(
-          "warning",
-          "warning",
-          "Atenção",
-          "Todos os campos são obrigatórios."
-        );
-      }
+      // if (
+      //   !this.dadosTreinamento.nome ||
+      //   !this.dadosTreinamento.setor ||
+      //   !this.dadosTreinamento.data ||
+      //   !this.dadosTreinamento.fabrica ||
+      //   !this.dadosTreinamento.celula ||
+      //   !this.setorTreinamento ||
+      //   !this.gerenteSelecionado ||
+      //   !this.dadosColaboradores
+      // ) {
+      //   return this.$refs.alert.mostrarAlerta(
+      //     "warning",
+      //     "warning",
+      //     "Atenção",
+      //     "Todos os campos são obrigatórios."
+      //   );
+      // }
 
-      if (!this.verifyDate(this.dadosColaborador.data)) {
+      if (!this.verifyDate(this.dadosTreinamento.data)) {
         return this.$refs.alert.mostrarAlerta(
           "warning",
           "warning",
@@ -492,24 +686,28 @@ export default {
 
       axios
         .post(`http://${ip}:3020/postTraining`, {
-          data: this.dadosColaborador,
+          colaboradores: this.dadosColaboradores,
+          treinamento: this.dadosTreinamento,
           gerente: this.gerenteSelecionado,
-          setorTreinamento: this.setorTreinamento,
           usuario: this.decodeJwt().usuario,
           unidade: "sest",
         })
         .then((response) => {
           (this.gerenteSelecionado = null),
-            (this.dadosColaborador = {
-              matricula: null,
+            (this.gerenteSelecionadoColaborador = ""),
+            (this.setoresGerenteColaborador = []),
+            (this.setorGerente = ""),
+            (this.employeesByDepartment = {}),
+            (this.dadosTreinamento = {
               nome: "",
               setor: "",
-              treinamento: "",
               data: null,
               celula: null,
               fabrica: "",
-            });
+            }),
+            (this.dadosColaboradores = []);
           this.setorTreinamento = "";
+
           this.$refs.alert.mostrarAlerta(
             "success",
             "done_outline",
@@ -558,7 +756,25 @@ export default {
         })
         .then((response) => {
           this.trainings = response.data.trainings;
+          console.log(this.trainings);
           this.finishedTrainings = response.data.finished;
+          this.trainingsFilter();
+        })
+        .catch((error) => {
+          console.error("Erro ao buscar treinamentos: ", error);
+        });
+    },
+
+    getAllFinishedTrainings() {
+      axios
+        .get(`http://${ip}:3020/get-all-finished-trainings`, {
+          params: {
+            unidadeDass: "sest",
+          },
+        })
+        .then((response) => {
+          this.finishedTrainings = response.data.trainings;
+          console.log(this.finishedTrainings);
           this.trainingsFilter();
         })
         .catch((error) => {
@@ -581,31 +797,156 @@ export default {
         });
     },
 
-    getEmployee(matricula) {
-      if (matricula.length === 7) {
+    buscaSetores(gerente) {
+      if (gerente) {
         axios
-          .get(`http://${ip}:3020/getEmployee`, {
-            params: {
-              employee: this.dadosColaborador.matricula,
-              unidade: "sest",
-            },
-          })
+          .get(`http://${ip}:3020/buscaSetores/${gerente}`)
           .then((response) => {
-            this.dadosColaborador.nome = response.data.nome;
-            this.dadosColaborador.setor = response.data.nome_setor;
+            this.setoresGerenteColaborador = response.data;
           })
           .catch((error) => {
-            this.$refs.alert.mostrarAlerta(
-              "warning",
-              "warning",
-              "Atenção",
-              error.response.data
+            console.error("Erro ao trazer os nomes dos setores: ", error);
+          });
+      }
+    },
+
+    searchEmloyeeByDepartment(department) {
+      if (department) {
+        axios
+          .get(`http://${ip}:3020/get-emplpoyee-by-department/${department}`)
+          .then((response) => {
+            this.employeesByDepartment = response.data;
+            console.log(this.employeesByDepartment);
+          })
+          .catch((error) => {
+            console.error(
+              "Erro ao buscar os operadores do setor selecionado: ",
+              error
             );
           });
       }
     },
 
-    startTraining(id) {
+    selectEmployee(employee) {
+      const index = this.dadosColaboradores.findIndex(
+        (item) => item.matricula === employee.matricula
+      );
+      if (index !== -1) {
+        return this.dadosColaboradores.splice(index, 1);
+      }
+
+      this.dadosColaboradores.push(employee);
+    },
+
+    checkBarCode(barCode) {
+      if (barCode.length === 14) {
+        axios
+          .get(`http://${ip}:3020/check-barcode/${barCode}`)
+          .then((response) => {
+            this.employeesCheckedBarcode.push(response.data[0].nome);
+            this.barCode = "";
+          })
+          .catch((error) => {
+            console.error("Erro interno no servidor: ", error);
+          });
+      }
+    },
+
+    async startTraining(id, employees) {
+      if (!this.decodeJwt()) {
+        return this.$refs.alert.mostrarAlerta(
+          "warning",
+          "warning",
+          "Atenção",
+          "Você precisa fazer login para prosseguir."
+        );
+      }
+
+      const absent = [];
+      employees.forEach((nome) => {
+        if (!this.employeesCheckedBarcode.includes(nome)) {
+          absent.push(nome);
+        }
+      });
+
+      if (this.employeesCheckedBarcode.length === 0) {
+        return this.$refs.alert.mostrarAlerta(
+          "warning",
+          "warning",
+          "Atenção",
+          "Só é possivel iniciar o treinamento com colaborador presente."
+        );
+      }
+
+      const delay = async () => {
+        return new Promise((resolve) => setTimeout(resolve, 3000));
+      };
+
+      if (absent.length > 0) {
+        const nomesFaltaram = absent.join(", ");
+        this.$refs.alert.mostrarAlerta(
+          "warning",
+          "warning",
+          "Atenção",
+          `Colaboradores Ausentes: ${nomesFaltaram}`
+        );
+      }
+
+      await delay();
+
+      axios
+        .put(`http://${ip}:3020/start-training/${id}`, {
+          user: this.decodeJwt().usuario,
+          unidade: "sest",
+          absent: absent,
+        })
+        .then((response) => {
+          console.log(response.data);
+          this.$refs.alert.mostrarAlerta(
+            "success",
+            "done_outline",
+            "Sucesso",
+            response.data
+          );
+
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        })
+        .catch((error) => {
+          return this.$refs.alert.mostrarAlerta(
+            "warning",
+            "warning",
+            "Atenção",
+            error.response.data
+          );
+        });
+    },
+
+    pauseTraining(training, order) {
+      let api = "";
+
+      if (order === "pause") {
+        api = "pause-training";
+      } else {
+        api = "unpause-training";
+      }
+
+      axios
+        .put(`http://${ip}:3020/${api}`, {
+          data: training,
+          user: this.decodeJwt().usuario,
+          unidade: "sest",
+        })
+        .then((response) => {
+          console.log(response.data);
+        })
+        .catch((error) => {
+          console.error("Erro ao pausar treinamento: ", error);
+        });
+    },
+
+    stopTraining() {
       if (!this.decodeJwt()) {
         return this.$refs.alert.mostrarAlerta(
           "warning",
@@ -616,7 +957,8 @@ export default {
       }
 
       axios
-        .put(`http://${ip}:3020/start-training/${id}`, {
+        .put(`http://${ip}:3020/stop-training`, {
+          data: this.avaliacaoColaborador,
           user: this.decodeJwt().usuario,
           unidade: "sest",
         })
@@ -642,42 +984,20 @@ export default {
         });
     },
 
-    stopTraining(id) {
-      if (!this.decodeJwt()) {
-        return this.$refs.alert.mostrarAlerta(
-          "warning",
-          "warning",
-          "Atenção",
-          "Você precisa fazer login para prosseguir."
-        );
-      }
+    setResultObject(data) {
+      const nomes = data.nomes_colaboradores
+        .split(",")
+        .map((nome) => nome.trim());
 
-      axios
-        .put(`http://${ip}:3020/stop-training/${id}`, {
-          data: this.resultEmployee,
-          user: this.decodeJwt().usuario,
-          unidade: "sest",
-        })
-        .then((response) => {
-          this.$refs.alert.mostrarAlerta(
-            "success",
-            "done_outline",
-            "Sucesso",
-            response.data
-          );
+      const employeesIds = data.ids.split(",").map((id) => id.trim());
 
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
-        })
-        .catch((error) => {
-          return this.$refs.alert.mostrarAlerta(
-            "warning",
-            "warning",
-            "Atenção",
-            error.response.data
-          );
-        });
+      nomes.forEach((nome, index) => {
+        this.avaliacaoColaborador[nome] = {
+          result: false,
+          obs: "",
+          id: employeesIds[index],
+        };
+      });
     },
 
     cancelTraining(data, id) {
@@ -700,8 +1020,9 @@ export default {
       }
 
       axios
-        .put(`http://${ip}:3020/cancel-training/${id}`, {
+        .put(`http://${ip}:3020/cancel-training`, {
           motivo: data.motivo,
+          id: id,
           user: this.decodeJwt().usuario,
           unidade: "sest",
         })
@@ -718,6 +1039,7 @@ export default {
           }, 1000);
         })
         .catch((error) => {
+          console.error("Falha ao cancelar treinamento: ", error);
           return this.$refs.alert.mostrarAlerta(
             "warning",
             "warning",
@@ -888,6 +1210,52 @@ export default {
   padding: 20px;
   width: 73%;
   margin: 30px 0;
+}
+
+.employees-check ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.employees-check ul li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.checkedBarcode {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.notChecked {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.employee-name {
+  font-size: 1em;
+}
+
+.status-icon {
+  display: flex;
+  align-items: center;
+}
+
+.material-icons {
+  font-size: 24px;
+}
+
+.checkedBarcode .material-icons {
+  color: #28a745;
+}
+
+.notChecked .material-icons {
+  color: #dc3545;
 }
 
 @keyframes wave {
