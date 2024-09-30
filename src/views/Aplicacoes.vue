@@ -218,7 +218,7 @@
       </router-link>
     </div>
 
-    <!-- <div class="col-4 mb-4 aplication-card">
+    <div class="col-4 mb-4 aplication-card">
       <router-link
         to="/treinamentos"
         class="treinamentos"
@@ -230,16 +230,18 @@
           <img :src="treinamentosImg" />
         </span>
       </router-link>
-    </div> -->
+    </div>
   </div>
 
   <hr />
 
-  <div class="title-aplicacoes">
-    <h6 class="mb-4">Dashboards</h6>
-  </div>
-  <div class="d-flex col-12">
-    <lista-generica :items="items" />
+  <div class="dashboards">
+    <div class="title-aplicacoes">
+      <h6 class="mb-4">Dashboards</h6>
+    </div>
+    <div class="d-flex col-12">
+      <lista-generica :items="items" />
+    </div>
   </div>
 </template>
 
@@ -262,7 +264,9 @@ import sorteioImg from "../../public/img/aplicacoes/sorteio.png";
 import temposMetodosImg from "../../public/img/aplicacoes/temposemetodos.png";
 import treinamentosImg from "../../public/img/aplicacoes/treinamentos.png";
 
+import axios from "axios";
 import VueJwtDecode from "vue-jwt-decode";
+import ip from "../ip";
 import ListaGenerica from "./components/ListaGenerica.vue";
 
 export default {
@@ -274,6 +278,7 @@ export default {
   mounted() {
     this.permissaoDP();
     this.permissaoPcp();
+    this.getGeoLocation();
   },
 
   methods: {
@@ -301,6 +306,28 @@ export default {
       let token = sessionStorage.getItem("token");
       if (token) {
         return VueJwtDecode.decode(token);
+      }
+    },
+
+    getGeoLocation() {
+      axios
+        .get(`http://${ip}:3041/geo-location`)
+        .then((response) => {
+          console.log(response.data);
+          this.city = response.data.city;
+          console.log(this.city);
+        })
+        .catch((error) => {
+          console.error("Erro consultar geolocation: ", error);
+        });
+    },
+
+    unidadeSest() {
+      if (!this.decodeJwt()) {
+        return false;
+      }
+      if (this.decodeJwt().unidade === "SEST") {
+        return true;
       }
     },
 
@@ -366,6 +393,8 @@ export default {
     return {
       onHover: false,
       currentPenseAjaImage: penseajaImg,
+
+      city: "",
 
       ambulatorioImg: ambulatorioImg,
       baixaProdutoImg: baixaProdutoImg,

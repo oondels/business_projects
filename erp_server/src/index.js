@@ -9,6 +9,9 @@ import { ip } from "../ip.js";
 import { PRIVATE_KEY, tokenValidated } from "./auth.js";
 import { pool } from "./db.cjs";
 
+import axios from "axios";
+import geoip from "geoip-lite";
+
 // Função para obter o caminho do diretório atual em ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,7 +31,9 @@ app.get("/", (req, res) => {
   res.send("Hello World");
 });
 
-app.listen(port, ip, () => console.log(`App listening on port ${port}! at ip ${ip}`));
+app.listen(port, ip, () =>
+  console.log(`App listening on port ${port}! at ip ${ip}`)
+);
 
 const storagePalavraGerencial = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -51,20 +56,27 @@ const storageDestaque = multer.diskStorage({
 const uploadPalavraGerencial = multer({ storage: storagePalavraGerencial });
 const uploadDestaque = multer({ storage: storageDestaque });
 
-app.use("/arquivos/palavra_gerencial", express.static(path.join(__dirname, "assets/arquivos/palavra_gerencial")));
-app.use("/arquivos/destaques", express.static(path.join(__dirname, "assets/arquivos/destaques")));
+app.use(
+  "/arquivos/palavra_gerencial",
+  express.static(path.join(__dirname, "assets/arquivos/palavra_gerencial"))
+);
+app.use(
+  "/arquivos/destaques",
+  express.static(path.join(__dirname, "assets/arquivos/destaques"))
+);
 
 // Rota de login
 app.post("/login", async (req, res) => {
   try {
     const { usuario, senha } = req.body;
 
-    const result = await pool.query("SELECT * FROM autenticacao.usuarios WHERE usuario = $1 AND senha = $2", [
-      usuario.toUpperCase(),
-      parseMD5(senha),
-    ]);
+    const result = await pool.query(
+      "SELECT * FROM autenticacao.usuarios WHERE usuario = $1 AND senha = $2",
+      [usuario.toUpperCase(), parseMD5(senha)]
+    );
 
-    if (result.rows.length === 0) return res.status(401).send("Usuário ou senha incorreta!");
+    if (result.rows.length === 0)
+      return res.status(401).send("Usuário ou senha incorreta!");
     const dadosBanco = result.rows[0];
 
     const token = jsonwebtoken.sign(
@@ -90,11 +102,18 @@ app.post("/recuperar", async (req, res) => {
   const { codigo, novaSenha } = req.body;
 
   try {
-    const result = await pool.query("SELECT * FROM autenticacao.usuarios WHERE codigo_barras = $1", [codigo]);
+    const result = await pool.query(
+      "SELECT * FROM autenticacao.usuarios WHERE codigo_barras = $1",
+      [codigo]
+    );
 
-    if (result.rows.length === 0) return res.status(401).send("Crachá incorreto ou não autorizado!");
+    if (result.rows.length === 0)
+      return res.status(401).send("Crachá incorreto ou não autorizado!");
 
-    const update = await pool.query("UPDATE autenticacao.usuarios SET senha = $2 WHERE codigo_barras = $1", [codigo, parseMD5(novaSenha)]);
+    const update = await pool.query(
+      "UPDATE autenticacao.usuarios SET senha = $2 WHERE codigo_barras = $1",
+      [codigo, parseMD5(novaSenha)]
+    );
 
     return res.status(200).send("Senha alterada com sucesso");
   } catch (error) {
@@ -102,17 +121,20 @@ app.post("/recuperar", async (req, res) => {
   }
 });
 
-// app.use('*', tokenValidated);
+app.get("/geo-location", async (req, res) => {
+  try {
+    const ipResponse = await axios.get("https://api.ipify.org?format=json");
+    const publicIp = ipResponse.data.ip;
 
-// app.get('/private', (req, res) => {
-//     const { user } = req;
-//     return res.status(200).json({
-//         message: 'Esta é uma rota privada',
-//         data: {
-//             usuarioLogado: user
-//         }
-//     });
-// });
+    const geoResponse = await axios.get(
+      `https://ipinfo.io/${publicIp}?token=6b0724aa2eaca3`
+    );
+
+    res.send(geoResponse.data);
+  } catch (error) {
+    console.error("Erro interno no serviodor ", error);
+  }
+});
 
 // Tela inicial
 
@@ -127,23 +149,27 @@ app.get("/buscaPenseAja", async (req, res) => {
   }
 });
 
-app.post("/adicionarDestaque", uploadDestaque.single("destaque"), async (req, res) => {
-  try {
-    const { usuario } = req.body;
-    const caminho = `arquivos/destaques/${req.file.filename}`;
-    const titulo = req.file.filename.split("-")[1];
+app.post(
+  "/adicionarDestaque",
+  uploadDestaque.single("destaque"),
+  async (req, res) => {
+    try {
+      const { usuario } = req.body;
+      const caminho = `arquivos/destaques/${req.file.filename}`;
+      const titulo = req.file.filename.split("-")[1];
 
-    const salvaCaminho = await pool.query(
-      "INSERT INTO unix.arquivos (createdate, usuariocreate, arquivo, caminho, titulo) VALUES(NOW(), $1, 'DESTAQUE', $2, $3)",
-      [usuario, caminho, titulo]
-    );
+      const salvaCaminho = await pool.query(
+        "INSERT INTO unix.arquivos (createdate, usuariocreate, arquivo, caminho, titulo) VALUES(NOW(), $1, 'DESTAQUE', $2, $3)",
+        [usuario, caminho, titulo]
+      );
 
-    res.status(200).send("Arquivo salvo com sucesso!");
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Erro ao salvar arquivo");
+      res.status(200).send("Arquivo salvo com sucesso!");
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Erro ao salvar arquivo");
+    }
   }
-});
+);
 
 app.get("/buscaDestaques", async (req, res) => {
   try {
@@ -163,23 +189,27 @@ app.get("/buscaDestaques", async (req, res) => {
   }
 });
 
-app.post("/adicionarPalavraGerencial", uploadPalavraGerencial.single("palavraGerencial"), async (req, res) => {
-  try {
-    const { usuario } = req.body;
-    const caminho = `arquivos/palavra_gerencial/${req.file.filename}`;
-    const titulo = req.file.filename.split("-")[1];
+app.post(
+  "/adicionarPalavraGerencial",
+  uploadPalavraGerencial.single("palavraGerencial"),
+  async (req, res) => {
+    try {
+      const { usuario } = req.body;
+      const caminho = `arquivos/palavra_gerencial/${req.file.filename}`;
+      const titulo = req.file.filename.split("-")[1];
 
-    const salvaCaminho = await pool.query(
-      "INSERT INTO unix.arquivos (createdate, usuariocreate, arquivo, caminho, titulo) VALUES(NOW(), $1, 'PALAVRA GERENCIAL', $2, $3)",
-      [usuario, caminho, titulo]
-    );
+      const salvaCaminho = await pool.query(
+        "INSERT INTO unix.arquivos (createdate, usuariocreate, arquivo, caminho, titulo) VALUES(NOW(), $1, 'PALAVRA GERENCIAL', $2, $3)",
+        [usuario, caminho, titulo]
+      );
 
-    res.status(200).send("Arquivo salvo com sucesso");
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Erro ao salvar arquivo");
+      res.status(200).send("Arquivo salvo com sucesso");
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Erro ao salvar arquivo");
+    }
   }
-});
+);
 
 app.get("/getPalavrasGerenciais", async (req, res) => {
   try {
@@ -204,12 +234,15 @@ app.get("/getPalavrasGerenciais", async (req, res) => {
 app.get("/buscaColaboradorPelaMatricula", async (req, res) => {
   try {
     const matricula = req.query.matricula;
-    const result = await pool.query("SELECT nome, matricula, gerente, nome_setor FROM colaborador.lista_funcionario WHERE matricula = $1", [
-      matricula,
-    ]);
+    const result = await pool.query(
+      "SELECT nome, matricula, gerente, nome_setor FROM colaborador.lista_funcionario WHERE matricula = $1",
+      [matricula]
+    );
     res.json(result.rows[0]);
   } catch (error) {
-    res.status(500).json({ error: "Erro ao buscar colaborador pela MATRICULA: ", error });
+    res
+      .status(500)
+      .json({ error: "Erro ao buscar colaborador pela MATRICULA: ", error });
   }
 });
 
@@ -228,14 +261,25 @@ app.post("/salvaPesquisa", async (req, res) => {
       return res.status(422).send("Dados inválidos ou ausentes");
     }
 
-    const verificaDisponibilidade = await pool.query("SELECT * FROM unix.pesquisa_junina WHERE matricula = $1", [pesquisa.matricula]);
+    const verificaDisponibilidade = await pool.query(
+      "SELECT * FROM unix.pesquisa_junina WHERE matricula = $1",
+      [pesquisa.matricula]
+    );
     if (verificaDisponibilidade.rowCount > 0) {
       return res.status(400).send("Votação já registrada no sistema.");
     }
 
     const salvaPesquisa = await pool.query(
       "INSERT INTO unix.pesquisa_junina(createdate, turno, dia_gozado, dia_compensacao, matricula, nome, gerente, setor) VALUES('NOW()', $1, $2, $3, $4, $5, $6, $7)",
-      [pesquisa.turno, pesquisa.diaGozado, pesquisa.diaCompensacao, pesquisa.matricula, pesquisa.nome, pesquisa.gerente, pesquisa.setor]
+      [
+        pesquisa.turno,
+        pesquisa.diaGozado,
+        pesquisa.diaCompensacao,
+        pesquisa.matricula,
+        pesquisa.nome,
+        pesquisa.gerente,
+        pesquisa.setor,
+      ]
     );
     return res.status(200).send("Votação salva com sucesso");
   } catch (error) {
@@ -307,7 +351,12 @@ app.get("/buscaPesquisaParcial", async (req, res) => {
       { compensacaoTurno1: criaCompensacao("1° Turno", buscaPesquisa.rows[0]) },
       { compensacaoTurno2: criaCompensacao("2° Turno", buscaPesquisa.rows[1]) },
       { compensacaoTurno3: criaCompensacao("3° Turno", buscaPesquisa.rows[2]) },
-      { compensacaoComercial: criaCompensacao("Comercial", buscaPesquisa.rows[3]) },
+      {
+        compensacaoComercial: criaCompensacao(
+          "Comercial",
+          buscaPesquisa.rows[3]
+        ),
+      },
 
       { folgaTurno1: criaFolga("1° Turno", buscaPesquisa.rows[0]) },
       { folgaTurno2: criaFolga("2° Turno", buscaPesquisa.rows[1]) },
