@@ -77,6 +77,13 @@
         </div>
         <div class="col-lg-12 col-sm-12">
           <div class="card col-12 z-index-2 mb-4">
+            <v-select
+              label="Unidade"
+              v-model="unidadeDadosGrafico"
+              :items="['Santo Estêvão', 'Vitória da Conquista', 'Itaberaba']"
+              @update:modelValue="buscaDadosGlobais"
+            ></v-select>
+
             <gradient-line-chart
               v-if="showChart"
               id="performance1"
@@ -443,6 +450,7 @@
           </v-dialog>
         </div>
 
+        <!-- Lista de Reservas -->
         <div
           v-if="permissaoRefeitorio() && reservasAmanhaDoDia.length > 0"
           class="reservas mt-3"
@@ -478,49 +486,47 @@
                   <td>{{ reserva.gerente }}</td>
                   <td>
                     <div class="text-center">
-                      <v-dialog
-                        v-model="confirmarCancelamento"
-                        max-width="400"
-                        persistent
-                      >
+                      <v-dialog max-width="400" persistent>
                         <template v-slot:activator="{ props: activatorProps }">
                           <v-btn v-bind="activatorProps"> Cancelar </v-btn>
                         </template>
 
-                        <v-card
-                          color="danger"
-                          dark
-                          prepend-icon="mdi mdi-alert"
-                          text="Esse proceso não pode ser revertido, será necessário chamar o colaborador para agendar novamente. 
+                        <template v-slot:default="{ isActive }">
+                          <v-card
+                            color="danger"
+                            dark
+                            prepend-icon="mdi mdi-alert"
+                            text="Esse proceso não pode ser revertido, será necessário chamar o colaborador para agendar novamente. 
                           Só cancele se tiver certeza!"
-                          title="Deseja cancelar esta reserva?"
-                        >
-                          <template v-slot:actions>
-                            <v-spacer></v-spacer>
+                            title="Deseja cancelar esta reserva?"
+                          >
+                            <template v-slot:actions>
+                              <v-spacer></v-spacer>
 
-                            <v-btn
-                              @click="confirmarCancelamento = false"
-                              color="yellow-accent-1"
-                              variant="outlined"
-                              dark
-                            >
-                              Não Cancelar Reserva
-                            </v-btn>
+                              <v-btn
+                                @click="isActive.value = false"
+                                color="yellow-accent-1"
+                                variant="outlined"
+                                dark
+                              >
+                                Não Cancelar Reserva
+                              </v-btn>
 
-                            <v-btn
-                              @click="
-                                confirmarCancelamento = false;
-                                canclearReserva(reserva.id);
-                              "
-                              color="black"
-                              variant="outlined"
-                              dark
-                              class="mr-2"
-                            >
-                              Cancelar Reserva
-                            </v-btn>
-                          </template>
-                        </v-card>
+                              <v-btn
+                                @click="
+                                  isActive.value = false;
+                                  canclearReserva(reserva.id);
+                                "
+                                color="black"
+                                variant="outlined"
+                                dark
+                                class="mr-2"
+                              >
+                                Cancelar Reserva
+                              </v-btn>
+                            </template>
+                          </v-card>
+                        </template>
                       </v-dialog>
                     </div>
                   </td>
@@ -569,6 +575,8 @@ export default {
       showChart: false,
       chartData: {},
 
+      unidadeDadosGrafico: "Santo Estêvão",
+
       reservasDoDia: [],
       reservasLanche: [],
       reservasLight: [],
@@ -616,6 +624,7 @@ export default {
       tipoRelatorio: "",
     };
   },
+
   mounted() {
     this.pegaProximoSabado();
     this.pegaProximoDiaUtil();
@@ -803,36 +812,68 @@ export default {
     },
 
     buscaReservasDoDia() {
-      axios.get(`http://${ip}:3048/buscaReservasDoDia`).then((response) => {
-        this.reservasDoDia = response.data.totais;
-        this.reservasLanche = response.data.lanche;
-        this.reservasLight = response.data.light;
-        this.reservasLancheConsumidas = response.data.lancheConsumidas;
-        this.reservasLightConsumidas = response.data.lightConsumidas;
-        this.reservasConsumidas = response.data.consumidas;
-      });
+      if (this.decodeJwt()) {
+        axios
+          .get(`http://${ip}:3048/buscaReservasDoDia`, {
+            params: {
+              unidade: this.decodeJwt().unidade,
+            },
+          })
+          .then((response) => {
+            this.reservasDoDia = response.data.totais;
+            this.reservasLanche = response.data.lanche;
+            this.reservasLight = response.data.light;
+            this.reservasLancheConsumidas = response.data.lancheConsumidas;
+            this.reservasLightConsumidas = response.data.lightConsumidas;
+            this.reservasConsumidas = response.data.consumidas;
+          });
+      }
     },
 
     buscaReservasAmanhaDoDia() {
-      axios
-        .get(`http://${ip}:3048/buscaReservasAmanhaDoDia`)
-        .then((response) => {
-          this.reservasAmanhaDoDia = response.data.totais;
-          this.reservasFiltradas - response.data.totais;
-          this.filtroReservas();
+      if (this.decodeJwt()) {
+        axios
+          .get(`http://${ip}:3048/buscaReservasAmanhaDoDia`, {
+            params: {
+              unidade: this.decodeJwt().unidade,
+            },
+          })
+          .then((response) => {
+            this.reservasAmanhaDoDia = response.data.totais;
+            this.reservasFiltradas - response.data.totais;
+            this.filtroReservas();
 
-          this.reservasAmanhaLanche = response.data.lanche;
-          this.reservasAmanhaLight = response.data.light;
-          this.reservasAmanhaLancheConsumidas = response.data.lancheConsumidas;
-          this.reservasAmanhaLightConsumidas = response.data.lightConsumidas;
-          this.reservasAmanhaConsumidas = response.data.consumidas;
-        });
+            this.reservasAmanhaLanche = response.data.lanche;
+            this.reservasAmanhaLight = response.data.light;
+            this.reservasAmanhaLancheConsumidas =
+              response.data.lancheConsumidas;
+            this.reservasAmanhaLightConsumidas = response.data.lightConsumidas;
+            this.reservasAmanhaConsumidas = response.data.consumidas;
+          });
+      }
     },
 
     buscaDadosGlobais() {
+      let unidadeMap = {
+        "Santo Estêvão": "SEST",
+        "Vitória da Conquista": "VDC",
+        Itaberaba: "ITB",
+      };
+
+      let unidade = unidadeMap[this.unidadeDadosGrafico] || "SEST";
+
+      if (this.decodeJwt()) {
+        this.unidadeDadosGrafico = this.decodeJwt().unidade;
+        unidade = this.decodeJwt().unidade;
+      }
+
       this.showChart = false;
       axios
-        .get(`http://${ip}:3048/buscaDadoGlobaisAuditorias`)
+        .get(`http://${ip}:3048/buscaDadoGlobaisAuditorias`, {
+          params: {
+            unidade: unidade,
+          },
+        })
         .then((response) => {
           this.dadosGrafico = response.data;
 
@@ -883,49 +924,63 @@ export default {
     },
 
     buscaGerentes() {
-      axios
-        .get(`http://${ip}:3048/buscaNomesGerentes`)
-        .then((response) => {
-          this.gerentes = response.data;
-        })
-        .catch((error) => {
-          console.error("Erro ao buscar os gerentes: ", error);
-        });
-    },
-
-    buscaSetores(gerente) {
-      if (gerente) {
+      if (this.decodeJwt()) {
         axios
-          .get(`http://${ip}:3048/buscaSetores`, {
-            params: { gerente: gerente },
+          .get(`http://${ip}:3048/buscaNomesGerentes`, {
+            params: {
+              unidade: this.decodeJwt().unidade,
+            },
           })
           .then((response) => {
-            this.setores = response.data;
-            this.disabledSetores = false;
+            this.gerentes = response.data;
           })
           .catch((error) => {
-            console.error("Erro ao trazer os nomes dos setores: ", error);
+            console.error("Erro ao buscar os gerentes: ", error);
           });
       }
     },
 
+    buscaSetores(gerente) {
+      if (this.decodeJwt()) {
+        if (gerente) {
+          axios
+            .get(`http://${ip}:3048/buscaSetores`, {
+              params: {
+                gerente: gerente,
+                unidade: this.decodeJwt().unidade,
+              },
+            })
+            .then((response) => {
+              this.setores = response.data;
+              this.disabledSetores = false;
+            })
+            .catch((error) => {
+              console.error("Erro ao trazer os nomes dos setores: ", error);
+            });
+        }
+      }
+    },
+
     buscaColaboradoresPorSetor() {
-      if (this.gerenteSelecionado && this.setores && this.dataReserva) {
-        axios
-          .get(`http://${ip}:3048/buscaColaboradoresPorSetor`, {
-            params: {
-              gerente: this.gerenteSelecionado,
-              setor: this.setorSelecionado,
-              dataReserva: this.dataReserva,
-            },
-          })
-          .then((response) => {
-            this.colaboradoresSabado = response.data;
-            this.disabledCelula = false;
-          })
-          .catch((error) => {
-            console.error("Erro ao buscar colaboradores: ", error);
-          });
+      if (this.decodeJwt()) {
+        if (this.gerenteSelecionado && this.setores && this.dataReserva) {
+          axios
+            .get(`http://${ip}:3048/buscaColaboradoresPorSetor`, {
+              params: {
+                gerente: this.gerenteSelecionado,
+                setor: this.setorSelecionado,
+                dataReserva: this.dataReserva,
+                unidade: this.decodeJwt().unidade,
+              },
+            })
+            .then((response) => {
+              this.colaboradoresSabado = response.data;
+              this.disabledCelula = false;
+            })
+            .catch((error) => {
+              console.error("Erro ao buscar colaboradores: ", error);
+            });
+        }
       }
     },
 
@@ -936,52 +991,68 @@ export default {
     },
 
     buscaGerenteReservadoSabado() {
-      axios
-        .get(`http://${ip}:3048/buscaGerenteReservadoSabado`)
-        .then((response) => {
-          this.gerenteReservado = response.data;
-        });
+      if (this.decodeJwt()) {
+        axios
+          .get(`http://${ip}:3048/buscaGerenteReservadoSabado`, {
+            params: {
+              unidade: this.decodeJwt().unidade,
+            },
+          })
+          .then((response) => {
+            this.gerenteReservado = response.data;
+          });
+      }
     },
 
     geraVoucherPeloGerente(gerente) {
-      axios
-        .get(`http://${ip}:3048/geraVoucherPeloGerente`, {
-          params: { gerente: gerente, dataReserva: this.dataReserva },
-        })
-        .then((response) => {
-          const pessoas = response.data;
+      if (this.decodeJwt()) {
+        axios
+          .get(`http://${ip}:3048/geraVoucherPeloGerente`, {
+            params: {
+              gerente: gerente,
+              dataReserva: this.dataReserva,
+              unidade: this.decodeJwt().unidade,
+            },
+          })
+          .then((response) => {
+            const pessoas = response.data;
 
-          const doc = new jsPDF();
+            const doc = new jsPDF();
 
-          const cardWidth = 68;
-          const cardHeight = 24;
-          const marginX = 1;
-          const marginY = 1;
+            const cardWidth = 68;
+            const cardHeight = 24;
+            const marginX = 1;
+            const marginY = 1;
 
-          let pageIndex = 0;
+            let pageIndex = 0;
 
-          pessoas.forEach((pessoa, index) => {
-            const xPos = marginX + (pageIndex % 3) * (cardWidth + marginX * 2);
-            const yPos =
-              marginY + Math.floor(pageIndex / 3) * (cardHeight + marginY * 2);
+            pessoas.forEach((pessoa, index) => {
+              const xPos =
+                marginX + (pageIndex % 3) * (cardWidth + marginX * 2);
+              const yPos =
+                marginY +
+                Math.floor(pageIndex / 3) * (cardHeight + marginY * 2);
 
-            this.addCard(doc, pessoa, xPos, yPos, cardWidth, cardHeight);
+              this.addCard(doc, pessoa, xPos, yPos, cardWidth, cardHeight);
 
-            if ((pageIndex + 1) % 33 === 0 && index !== pessoas.length - 1) {
-              doc.addPage();
-              pageIndex = 0;
-            } else {
-              pageIndex++;
+              if ((pageIndex + 1) % 33 === 0 && index !== pessoas.length - 1) {
+                doc.addPage();
+                pageIndex = 0;
+              } else {
+                pageIndex++;
+              }
+            });
+
+            try {
+              doc.save(`${gerente}, ${this.dataReserva}.pdf`);
+            } catch (error) {
+              console.error("Erro ao salvar o PDF:", error);
             }
-          });
-
-          try {
-            doc.save(`${gerente}, ${this.dataReserva}.pdf`);
-          } catch (error) {
-            console.error("Erro ao salvar o PDF:", error);
-          }
-        })
-        .catch((error) => console.error("Erro ao buscar informações: ", error));
+          })
+          .catch((error) =>
+            console.error("Erro ao buscar informações: ", error)
+          );
+      }
     },
 
     addCard(doc, pessoa, xPos, yPos, width, height) {
@@ -1051,28 +1122,32 @@ export default {
     },
 
     geraRelatorioLancheSabado(tipoRelatorio) {
-      axios
-        .get(`http://${ip}:3048/geraRelatorioLancheSabado`, {
-          params: {
-            tipoRelatorio: tipoRelatorio,
-            dataInicial: this.dataInicial,
-            dataFinal: this.dataFinal,
-            turno: this.turnoSelecionado,
-          },
-        })
-        .then((response) => {
-          this.gerarXlsx(
-            response.data,
-            tipoRelatorio,
-            this.dataInicial,
-            this.dataFinal,
-            this.turnoSelecionado
-          );
-        })
-        .catch((error) => {
-          console.error("Erro ao buscar dados de relatório: ", error);
-        });
+      if (this.decodeJwt()) {
+        axios
+          .get(`http://${ip}:3048/geraRelatorioLancheSabado`, {
+            params: {
+              tipoRelatorio: tipoRelatorio,
+              dataInicial: this.dataInicial,
+              dataFinal: this.dataFinal,
+              turno: this.turnoSelecionado,
+              unidade: this.decodeJwt().unidade,
+            },
+          })
+          .then((response) => {
+            this.gerarXlsx(
+              response.data,
+              tipoRelatorio,
+              this.dataInicial,
+              this.dataFinal,
+              this.turnoSelecionado
+            );
+          })
+          .catch((error) => {
+            console.error("Erro ao buscar dados de relatório: ", error);
+          });
+      }
     },
+
     gerarXlsx(dados, tipoRelatorio, dataInicial, dataFinal, turno) {
       let dadosFormatados = [];
 
@@ -1127,16 +1202,21 @@ export default {
     },
 
     geraRelatorioQuantidadeSabado(dataReserva) {
-      axios
-        .get(`http://${ip}:3048/geraRelatorioQuantidadeSabado`, {
-          params: { dataReserva: dataReserva },
-        })
-        .then((response) => {
-          this.gerarXlsxQuantidadeSabado(response.data, dataReserva);
-        })
-        .catch((error) => {
-          console.error("Erro ao buscar dados de relatório: ", error);
-        });
+      if (this.decodeJwt()) {
+        axios
+          .get(`http://${ip}:3048/geraRelatorioQuantidadeSabado`, {
+            params: {
+              dataReserva: dataReserva,
+              unidade: this.decodeJwt().unidade,
+            },
+          })
+          .then((response) => {
+            this.gerarXlsxQuantidadeSabado(response.data, dataReserva);
+          })
+          .catch((error) => {
+            console.error("Erro ao buscar dados de relatório: ", error);
+          });
+      }
     },
     gerarXlsxQuantidadeSabado(dados, dataReserva) {
       let dadosFormatados = [];

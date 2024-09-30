@@ -4,4 +4,5 @@ node_modules
 /unix
 
 .env
+.env.production
 **/*.env*

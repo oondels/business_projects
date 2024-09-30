@@ -66,8 +66,30 @@ app.get("/get-emplpoyee-by-department/:department", async (req, res) => {
 app.post("/postTraining", async (req, res) => {
   try {
     const datas = req.body;
+    let employeeNotInsert = "";
 
     for (let employee of datas.colaboradores) {
+      const checkEmployee = await pool.query(
+        `
+          SELECT * FROM treinamentos.registros
+          WHERE
+            nome = $1 AND
+            data_treinamento = $2 AND
+            iniciado = true
+        `,
+        [employee.nome, datas.treinamento.data]
+      );
+
+      if (checkEmployee.rows.length > 0) {
+        const nameSplited = checkEmployee.rows[0].nome.split(" ");
+        const firstName = nameSplited[0];
+        const lastName = nameSplited[nameSplited.length - 1];
+
+        employeeNotInsert += `${firstName} ${lastName}, `;
+        console.log(employeeNotInsert);
+        continue;
+      }
+
       await pool.query(
         `
             INSERT INTO
@@ -89,6 +111,14 @@ app.post("/postTraining", async (req, res) => {
           datas.unidade,
         ]
       );
+    }
+
+    if (employeeNotInsert) {
+      return res
+        .status(403)
+        .send(
+          `Treinamento agendado com sucesso. Os colaboradores: ${employeeNotInsert} não foram inseridos pois estão em treinamento hoje.`
+        );
     }
     return res.status(200).send(`Treinamento agendado com sucesso!`);
   } catch (error) {
@@ -173,7 +203,8 @@ app.get("/get-all-trainings", async (req, res) => {
         gerente_celula,
         treinamento_setor,
         pausado,
-        STRING_AGG(nome, ', ') AS nomes_colaboradores
+        STRING_AGG(nome, ', ') AS nomes_colaboradores,
+        date_trunc('minute', date_inicio) AS date_inicio
     FROM 
         treinamentos.registros
     WHERE 
@@ -188,7 +219,8 @@ app.get("/get-all-trainings", async (req, res) => {
         celula, 
         gerente_celula, 
         treinamento_setor,
-        pausado
+        pausado,
+        date_trunc('minute', date_inicio)
     ORDER BY 
         data_treinamento ASC;
     `;
@@ -214,35 +246,44 @@ app.get("/get-all-finished-trainings", async (req, res) => {
 
     let queryTraining = `
     SELECT 
-        STRING_AGG(id::text, ', ') AS ids,
-        STRING_AGG(matricula::text, ', ') AS matriculas,
-        treinamento,
-        iniciado,
-        finalizado,
-        cancelado,
-        data_treinamento,
-        celula,
-        gerente_celula,
-        treinamento_setor,
-        start_treinamento_nome,
-        STRING_AGG(nome, ', ') AS nomes_colaboradores
+      STRING_AGG(DISTINCT  treinos.id::text, ', ') AS ids,
+      STRING_AGG(DISTINCT  treinos.matricula::text, ', ') AS matriculas,
+      treinos.treinamento,
+      treinos.iniciado,
+      treinos.finalizado,
+      treinos.cancelado,
+      treinos.data_treinamento,
+      treinos.celula,
+      treinos.gerente_celula,
+      treinos.treinamento_setor,
+      treinos.start_treinamento_nome,
+      STRING_AGG(DISTINCT  treinos.nome, ', ') AS nomes_colaboradores,
+      STRING_AGG(DISTINCT COALESCE(date_trunc('minute',pausas.pause_start)::text, ''), ', ') AS periodos_pausa_inicio,
+      STRING_AGG(DISTINCT COALESCE(date_trunc('minute',pausas.pause_end)::text, ''), ', ') AS periodos_pausa_fim,
+      date_trunc('minute', date_inicio) AS date_inicio,
+      date_trunc('minute', date_fim) AS date_fim
     FROM 
-        treinamentos.registros
+        treinamentos.registros AS treinos
+    LEFT JOIN 
+        treinamentos.treinamentos_pausados AS pausas 
+        ON treinos.id = pausas.training_id
     WHERE 
-        finalizado = true AND
-        unidade_dass = 'sest'
+        treinos.finalizado = true
+        AND treinos.unidade_dass = 'sest'
     GROUP BY 
-        treinamento,
-        iniciado,
-        finalizado,
-        cancelado,
-        data_treinamento, 
-        celula, 
-        gerente_celula, 
-        treinamento_setor,
-        start_treinamento_nome
+        treinos.treinamento,
+        treinos.iniciado,
+        treinos.finalizado,
+        treinos.cancelado,
+        treinos.data_treinamento, 
+        treinos.celula, 
+        treinos.gerente_celula, 
+        treinos.treinamento_setor,
+        treinos.start_treinamento_nome,
+        date_trunc('minute', date_inicio),
+        date_trunc('minute', date_fim)
     ORDER BY 
-        data_treinamento ASC;
+        treinos.data_treinamento ASC;
     `;
 
     const trainings = await pool.query(queryTraining);
@@ -413,7 +454,7 @@ app.put("/unpause-training", async (req, res) => {
         [id]
       );
     }
-    return res.status(200).send("Treinamento pausado com sucesso!");
+    return res.status(200).send("Treinamento retomado com sucesso!");
   } catch (error) {
     console.error("Erro interno no servidor: ", error);
     return res.status(500).send("Erro interno no servidor");
@@ -506,6 +547,125 @@ app.put("/cancel-training", async (req, res) => {
   }
 });
 
+app.get("/get-chart-data", async (req, res) => {
+  try {
+    const query = await pool.query(`
+        SELECT 
+          COUNT(*) AS total_treinamentos,
+          COUNT(CASE WHEN finalizado = true THEN 1 END) AS total_treinamentos_concluidos,
+          COUNT(CASE WHEN aprovado = true THEN 1 END) AS total_treinamentos_aprovados,
+          COUNT(CASE WHEN cancelado = true THEN 1 END) AS total_treinamentos_cancelados,
+          COUNT(CASE WHEN presenca = true THEN 1 END) AS total_colaboradores_presentes,
+          EXTRACT(MONTH FROM data_treinamento) AS mes,
+          gerente_celula
+        FROM 
+          treinamentos.registros
+        GROUP BY
+          gerente_celula,
+          mes
+      `);
+
+    let managerTraining = {
+      series: [
+        {
+          name: "Inflation",
+          data: [2.3, 3.1, 4.0, 10.1, 4.0, 3.6, 3.2, 2.3, 1.4, 0.8, 0.5, 0.2],
+        },
+      ],
+      chart: {
+        height: 350,
+        type: "bar",
+      },
+      plotOptions: {
+        bar: {
+          borderRadius: 10,
+          dataLabels: {
+            position: "top", 
+          },
+        },
+      },
+      dataLabels: {
+        enabled: true,
+        formatter: function (val) {
+          return val + "%";
+        },
+        offsetY: -20,
+        style: {
+          fontSize: "12px",
+          colors: ["#304758"],
+        },
+      },
+
+      xaxis: {
+        categories: [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ],
+        position: "top",
+        axisBorder: {
+          show: false,
+        },
+        axisTicks: {
+          show: false,
+        },
+        crosshairs: {
+          fill: {
+            type: "gradient",
+            gradient: {
+              colorFrom: "#D8E3F0",
+              colorTo: "#BED1E6",
+              stops: [0, 100],
+              opacityFrom: 0.4,
+              opacityTo: 0.5,
+            },
+          },
+        },
+        tooltip: {
+          enabled: true,
+        },
+      },
+      yaxis: {
+        axisBorder: {
+          show: false,
+        },
+        axisTicks: {
+          show: false,
+        },
+        labels: {
+          show: false,
+          formatter: function (val) {
+            return val + "%";
+          },
+        },
+      },
+      title: {
+        text: "Monthly Inflation in Argentina, 2002",
+        floating: true,
+        offsetY: 330,
+        align: "center",
+        style: {
+          color: "#444",
+        },
+      },
+    };
+
+    return res.status(200).json(query.rows);
+  } catch (error) {
+    console.error("Erro interno no servidor!", error);
+    return res.status(500).send("Erro interno no servidor! ", error);
+  }
+});
+
 app.get("/get-report-data", async (req, res) => {
   try {
     const reportInfo = req.query;
@@ -517,9 +677,28 @@ app.get("/get-report-data", async (req, res) => {
     ];
 
     let queryReport = `
-        SELECT * FROM treinamentos.registros
+        SELECT 
+          treino.nome,
+          treino.treinamento,
+          treino.data_treinamento,
+          treino.celula,
+          treino.gerente_celula,
+          treino.treinamento_setor,
+          treino.start_treinamento_nome,
+          treino.presenca,
+          treino.aprovado,
+          treino.observacao,
+          STRING_AGG(DISTINCT date_trunc('minute', pausas.pause_start)::text, ', ') AS periodos_pausa_inicio,
+          STRING_AGG(DISTINCT date_trunc('minute', pausas.pause_end)::text, ', ') AS periodos_pausa_fim,
+          date_trunc('minute', treino.date_inicio) AS date_inicio,
+          date_trunc('minute', treino.date_fim) AS date_fim
+        FROM 
+          treinamentos.registros AS treino
+        LEFT JOIN
+          treinamentos.treinamentos_pausados AS pausas
+          ON treino.id = pausas.training_id
         WHERE
-          data_treinamento BETWEEN  $1 AND $2 AND
+          data_treinamento BETWEEN $1 AND $2 AND
           finalizado = true AND
           treinamento_setor = $3
       `;
@@ -528,6 +707,23 @@ app.get("/get-report-data", async (req, res) => {
       queryReport += `AND start_treinamento_nome = $${params.length + 1}`;
       params.push(reportInfo.instrutor);
     }
+
+    queryReport += `
+      GROUP BY
+        treino.nome,
+        treino.treinamento,
+        treino.data_treinamento,
+        treino.celula,
+        treino.gerente_celula,
+        treino.treinamento_setor,
+        treino.start_treinamento_nome,
+        treino.presenca,
+        treino.aprovado,
+        treino.observacao,
+        date_trunc('minute', treino.date_inicio),
+        date_trunc('minute', treino.date_fim)
+      ORDER BY
+        treino.data_treinamento ASC;`;
 
     const reportData = await pool.query(queryReport, params);
 
