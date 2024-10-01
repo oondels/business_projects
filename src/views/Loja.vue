@@ -7,7 +7,7 @@
         class="title d-flex justify-content-center align-items-center flex-row"
       >
         <h3>Solicitação de Itens - DASS</h3>
-        <img src="../../public/img/icons/loja.png" />
+        <!-- <img src="../../public/img/icons/loja.png" /> -->
       </div>
 
       <div class="wrapper">
