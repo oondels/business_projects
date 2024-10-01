@@ -65,7 +65,7 @@
               <i
                 class="material-symbols-outlined pr-3"
                 role="button"
-                @click="removeSolicitacao"
+                @click="removeSolicitacao(solicitacaoIndex)"
                 v-if="solicitacaoIndex > 0"
               >
                 delete
@@ -79,17 +79,14 @@
                 @update:modelValue="
                   buscaModelosCadastrados(solicitacao.processo)
                 "
-                clearable
               ></v-select>
             </div>
 
             <div class="col-6">
               <v-combobox
-                :disabled="!solicitacao.processo"
+                :disabled="!dadosModelo[solicitacaoIndex]"
                 :items="dadosModelo[solicitacaoIndex]"
-                filterable
                 outlined
-                return-object
                 item-title="modelo"
                 item-value="id"
                 label="Modelo"
@@ -138,6 +135,7 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
+            v-if="dadosModelo.length > 0"
             color="primary"
             variant="tonal"
             append-icon="mdi-plus-circle"
@@ -230,6 +228,8 @@ export default {
 
     removeSolicitacao(index) {
       this.solicitacoes.splice(index, 1);
+      this.dadosModelo.splice(index, 1);
+      console.log(this.dadosModelo);
     },
 
     atribuiModeloSolicitacao(modeloSelecionado, index) {
@@ -244,8 +244,8 @@ export default {
           params: { processo: processo },
         })
         .then((response) => {
-          this.dadosModelo = [];
           this.dadosModelo.push(response.data);
+          console.log(this.dadosModelo);
         })
         .catch((error) => {
           console.error("Erro ao buscar modelos cadastrados", error.response);
@@ -333,6 +333,8 @@ export default {
         turno: "",
         fabrica: "",
       };
+
+      this.dadosModelo = [];
     },
   },
 

@@ -159,6 +159,7 @@
 import AppFooter from "@/examples/Footer.vue";
 import axios from "axios";
 import ip from "../ip";
+import VueJwtDecode from "vue-jwt-decode";
 
 const body = document.getElementsByTagName("body")[0];
 
@@ -196,10 +197,19 @@ export default {
     };
   },
   methods: {
+    decodeJwt() {
+      let token = sessionStorage.getItem("token");
+      if (token) {
+        return VueJwtDecode.decode(token);
+      }
+    },
+
     buscaColaboradorPeloRfid(rfid) {
       axios
         .get(`http://${ip}:3048/buscaColaboradorPeloRfid`, {
-          params: { rfid: rfid },
+          params: {
+            rfid: rfid,
+          },
         })
         .then((response) => {
           if (!response.data.matricula) {

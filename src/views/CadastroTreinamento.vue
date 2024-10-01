@@ -2,135 +2,240 @@
   <div class="d-flex flex-column justify-content-center align-items-center">
     <h4 class="text-center">Cadastro de Treinamentos</h4>
 
-    <div class="container-cadastro">
-      <div class="cadastro-treinamento">
-        <div style="min-width: 430px" class="colaborador p-2">
-          <h6>Cadastro Colaborador(es)</h6>
+    <v-carousel hide-delimiters show-arrows>
+      <template v-slot:prev="{ props }">
+        <span
+          @click="
+            props.onClick();
+            resetForm();
+          "
+          role="button"
+          class="material-symbols-outlined next-slide"
+        >
+          keyboard_arrow_left
+        </span>
+      </template>
+      <template v-slot:next="{ props }">
+        <span
+          @click="
+            props.onClick();
+            resetForm();
+          "
+          role="button"
+          class="material-symbols-outlined next-slide"
+        >
+          keyboard_arrow_right
+        </span>
+      </template>
+      <v-carousel-item>
+        <div class="container-cadastro">
+          <h4 class="text-center">Iniciar Treinamento</h4>
+          <div class="cadastro-treinamento">
+            <div style="min-width: 430px" class="colaborador p-2">
+              <h6>Cadastro Colaborador(es)</h6>
 
-          <v-combobox
-            v-model="gerenteSelecionadoColaborador"
-            @update:modelValue="buscaSetores(gerenteSelecionadoColaborador)"
-            :items="gerentes"
-            item-title="nome"
-            item-value="matricula"
-            label="Gerente do Colaborador"
-          ></v-combobox>
+              <v-text-field
+                v-model="employeeCode"
+                @input="getEmployeeByCode(employeeCode)"
+                label="Código de Barras"
+              ></v-text-field>
 
-          <v-combobox
-            :items="setoresGerenteColaborador"
-            label="Setor do Colaborador"
-            v-model="setorGerente"
-            @update:modelValue="searchEmloyeeByDepartment(setorGerente)"
-          ></v-combobox>
+              <div v-if="employeesBeeped.length" class="beeped-employees">
+                <ul>
+                  <li
+                    v-for="(employeeBeep, index) in employeesBeeped"
+                    :key="index"
+                  >
+                    <div class="person">
+                      <i class="material-symbols-outlined"> account_circle </i>
+                      {{ employeeBeep.split("|")[0] }}
+                    </div>
+                  </li>
+                </ul>
+              </div>
 
-          <!-- Listagem de Colaboradores -->
-          <v-dialog v-if="setorGerente" max-width="800">
-            <template v-slot:activator="{ props: activatorProps }">
-              <v-btn
-                v-bind="activatorProps"
-                color="surface-variant"
-                text="Selecionar Colaboradores"
-                variant="flat"
-              ></v-btn>
-            </template>
+              <v-text-field
+                v-model="dadosTreinamento.nome"
+                label="Treinamento"
+              ></v-text-field>
 
-            <template v-slot:default="{ isActive }">
-              <v-card title="Colaboradores">
-                <v-card-text>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Selecionar</th>
-                        <th>Nome</th>
-                        <th>Função</th>
-                        <th>Gerente</th>
-                        <th>Setor</th>
-                      </tr>
-                    </thead>
+              <v-combobox
+                label="Setor do Treinamento"
+                :items="setores"
+                v-model="dadosTreinamento.setor"
+              ></v-combobox>
+            </div>
 
-                    <tbody>
-                      <tr
-                        v-for="colaborador in employeesByDepartment"
-                        :key="colaborador.nome"
-                      >
-                        <td>
-                          <input
-                            @click="selectEmployee(colaborador)"
-                            v-model="colaborador.select"
-                            type="checkbox"
-                          />
-                        </td>
-                        <td>{{ colaborador.nome }}</td>
-                        <td>{{ colaborador.funcao }}</td>
-                        <td>{{ colaborador.gerente }}</td>
-                        <td>{{ colaborador.nome_setor }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </v-card-text>
+            <div style="min-width: 430px" class="dados-gerente p-2">
+              <h6>Dados Gerente da Célula</h6>
+              <v-text-field
+                type="number"
+                label="Célula"
+                v-model="dadosTreinamento.celula"
+              ></v-text-field>
 
-                <v-card-actions>
-                  <v-spacer></v-spacer>
+              <v-combobox
+                :items="['Fábrica 1', 'Fábrica 2', 'Fábrica 3']"
+                label="Fábrica"
+                v-model="dadosTreinamento.fabrica"
+              ></v-combobox>
 
-                  <v-btn text="Salvar" @click="isActive.value = false"></v-btn>
-                </v-card-actions>
-              </v-card>
-            </template>
-          </v-dialog>
+              <v-combobox
+                v-model="gerenteSelecionado"
+                :items="gerentes"
+                label="Nome Gerente"
+                clearable
+              ></v-combobox>
+            </div>
+          </div>
 
-          <div class="colaboradores-treinamento"></div>
-
-          <v-text-field
-            v-model="dadosTreinamento.nome"
-            label="Treinamento"
-          ></v-text-field>
-
-          <v-combobox
-            label="Setor do Treinamento"
-            :items="setores"
-            v-model="dadosTreinamento.setor"
-          ></v-combobox>
+          <div class="row p-2 col-12">
+            <v-btn @click="postTraining" color="success">Cadastrar</v-btn>
+          </div>
         </div>
+      </v-carousel-item>
 
-        <div style="min-width: 430px" class="dados-gerente p-2">
-          <h6>Dados Gerente da Célula</h6>
-          <v-text-field
-            type="number"
-            label="Célula"
-            v-model="dadosTreinamento.celula"
-          ></v-text-field>
+      <v-carousel-item>
+        <div class="container-cadastro">
+          <h4 class="text-center">Agendar Treinamento</h4>
+          <div class="cadastro-treinamento">
+            <div style="min-width: 430px" class="colaborador p-2">
+              <h6>Cadastro Colaborador(es)</h6>
 
-          <v-combobox
-            :items="['Fábrica 1', 'Fábrica 2', 'Fábrica 3']"
-            label="Fábrica"
-            v-model="dadosTreinamento.fabrica"
-          ></v-combobox>
+              <v-combobox
+                v-model="gerenteSelecionadoColaborador"
+                @update:modelValue="buscaSetores(gerenteSelecionadoColaborador)"
+                :items="gerentes"
+                item-title="nome"
+                item-value="matricula"
+                label="Gerente do Colaborador"
+              ></v-combobox>
 
-          <v-combobox
-            v-model="gerenteSelecionado"
-            :items="gerentes"
-            label="Nome Gerente"
-            clearable
-          ></v-combobox>
+              <v-combobox
+                :items="setoresGerenteColaborador"
+                label="Setor do Colaborador"
+                v-model="setorGerente"
+                @update:modelValue="searchEmloyeeByDepartment(setorGerente)"
+              ></v-combobox>
 
-          <v-text-field
-            v-model="dadosTreinamento.data"
-            type="date"
-            label="Data"
-          ></v-text-field>
+              <!-- Listagem de Colaboradores -->
+              <v-dialog v-if="setorGerente" max-width="800">
+                <template v-slot:activator="{ props: activatorProps }">
+                  <v-btn
+                    class="col-12, mb-1, mt-1"
+                    v-bind="activatorProps"
+                    variant="outlined"
+                    color="success"
+                    text="Selecionar Colaboradores"
+                  ></v-btn>
+                </template>
+
+                <template v-slot:default="{ isActive }">
+                  <v-card title="Colaboradores">
+                    <v-card-text>
+                      <table class="tabela-colaboradores">
+                        <thead>
+                          <tr>
+                            <th>Selecionar</th>
+                            <th>Nome</th>
+                            <th>Função</th>
+                            <th>Gerente</th>
+                            <th>Setor</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          <tr
+                            v-for="colaborador in employeesByDepartment"
+                            :key="colaborador.nome"
+                          >
+                            <td>
+                              <input
+                                @click="selectEmployee(colaborador)"
+                                v-model="colaborador.select"
+                                type="checkbox"
+                              />
+                            </td>
+                            <td>{{ colaborador.nome }}</td>
+                            <td>{{ colaborador.funcao }}</td>
+                            <td>{{ colaborador.gerente }}</td>
+                            <td>{{ colaborador.nome_setor }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </v-card-text>
+
+                    <v-card-actions>
+                      <v-spacer></v-spacer>
+
+                      <v-btn
+                        text="Salvar"
+                        @click="isActive.value = false"
+                      ></v-btn>
+                    </v-card-actions>
+                  </v-card>
+                </template>
+              </v-dialog>
+
+              <div class="colaboradores-treinamento"></div>
+
+              <v-text-field
+                v-model="dadosTreinamento.nome"
+                label="Treinamento"
+              ></v-text-field>
+
+              <v-combobox
+                label="Setor do Treinamento"
+                :items="setores"
+                v-model="dadosTreinamento.setor"
+              ></v-combobox>
+            </div>
+
+            <div style="min-width: 430px" class="dados-gerente p-2">
+              <h6>Dados Gerente da Célula</h6>
+              <v-text-field
+                type="number"
+                label="Célula"
+                v-model="dadosTreinamento.celula"
+              ></v-text-field>
+
+              <v-combobox
+                :items="['Fábrica 1', 'Fábrica 2', 'Fábrica 3']"
+                label="Fábrica"
+                v-model="dadosTreinamento.fabrica"
+              ></v-combobox>
+
+              <v-combobox
+                v-model="gerenteSelecionado"
+                :items="gerentes"
+                label="Nome Gerente"
+                clearable
+              ></v-combobox>
+
+              <v-text-field
+                v-model="dadosTreinamento.data"
+                type="date"
+                label="Data"
+              ></v-text-field>
+            </div>
+          </div>
+
+          <div class="row p-2 col-12">
+            <v-btn @click="postTraining" color="success">Cadastrar</v-btn>
+          </div>
         </div>
-      </div>
+      </v-carousel-item>
+    </v-carousel>
 
-      <div class="row p-2 col-12">
-        <v-btn @click="postTraining" color="success">Cadastrar</v-btn>
-      </div>
-    </div>
+    <!-- <div class="grafico-treinamentos-gerentes">
+      <ChartApex />
+    </div> -->
 
     <div
       class="d-flex flex-column justify-content-center align-items-center show-available-trainings"
     >
       <div class="report row col-6 mt-4">
-        <h5 class="text-center">Relatórios e Filtro</h5>
+        <h5 class="text-center">Relatórios e Filtros</h5>
         <v-combobox
           variant="outlined"
           color="success"
@@ -172,7 +277,7 @@
         </div>
       </div>
 
-      <h4 class="text-center">Treinamentos Pendentes</h4>
+      <h4 class="text-center">Treinamentos Pendentes/Andamento</h4>
       <div v-if="trainings">
         <div>
           <table class="tabela">
@@ -200,9 +305,11 @@
                   'in-time':
                     setDataStatus(training.data_treinamento) === 'in-time' &&
                     !training.cancelado,
+
                   today:
                     setDataStatus(training.data_treinamento) === 'today' &&
-                    !training.cancelado,
+                    !training.cancelado &&
+                    !training.iniciado,
                 }"
               >
                 <td
@@ -295,7 +402,7 @@
                 </td>
 
                 <td v-else-if="!training.cancelado && training.iniciado">
-                  <v-dialog v-model="stop" max-width="400" persistent>
+                  <v-dialog max-width="400" persistent>
                     <template v-slot:activator="{ props: activatorProps }">
                       <span v-if="!training.pausado">
                         <i
@@ -310,7 +417,7 @@
                         <i
                           role="button"
                           @click="pauseTraining(training, 'pause')"
-                          class="material-symbols-outlined"
+                          class="pause-button material-symbols-outlined"
                         >
                           pause_circle
                         </i>
@@ -319,65 +426,67 @@
                       <i
                         v-if="training.pausado"
                         role="button"
-                        class="material-symbols-outlined"
+                        class="play-button material-symbols-outlined"
                         @click="pauseTraining(training, 'play')"
                       >
                         play_pause
                       </i>
                     </template>
 
-                    <v-card>
-                      <v-card-title>
-                        <strong>Avalie o Operador </strong>
-                      </v-card-title>
+                    <template v-slot:default="{ isActive }">
+                      <v-card>
+                        <v-card-title>
+                          <strong>Avalie o Operador </strong>
+                        </v-card-title>
 
-                      <v-card-text>
-                        <div
-                          v-for="(employee, employeeId) in formateNames(
-                            training
-                          )"
-                          :key="employeeId"
-                        >
-                          <v-text-field
-                            :label="employee"
-                            v-model="avaliacaoColaborador[employee].obs"
-                          ></v-text-field>
+                        <v-card-text>
+                          <div
+                            v-for="(employee, employeeId) in formateNames(
+                              training
+                            )"
+                            :key="employeeId"
+                          >
+                            <v-text-field
+                              :label="employee"
+                              v-model="avaliacaoColaborador[employee].obs"
+                            ></v-text-field>
 
-                          <v-checkbox
-                            :label="
-                              avaliacaoColaborador[employee].result
-                                ? 'Aprovado'
-                                : 'Reprovado'
-                            "
-                            :color="
-                              avaliacaoColaborador[employee].result
-                                ? 'success'
-                                : 'danger'
-                            "
-                            v-model="avaliacaoColaborador[employee].result"
-                          ></v-checkbox>
-                        </div>
-                      </v-card-text>
+                            <v-checkbox
+                              :label="
+                                avaliacaoColaborador[employee].result
+                                  ? 'Aprovado'
+                                  : 'Reprovado'
+                              "
+                              :color="
+                                avaliacaoColaborador[employee].result
+                                  ? 'success'
+                                  : 'danger'
+                              "
+                              v-model="avaliacaoColaborador[employee].result"
+                            ></v-checkbox>
+                          </div>
+                        </v-card-text>
 
-                      <template v-slot:actions>
-                        <v-spacer></v-spacer>
+                        <template v-slot:actions>
+                          <v-spacer></v-spacer>
 
-                        <v-btn
-                          @click="stop = false"
-                          color="danger"
-                          variant="outlined"
-                          >Fechar
-                        </v-btn>
+                          <v-btn
+                            @click="isActive.value = false"
+                            color="danger"
+                            variant="outlined"
+                            >Fechar
+                          </v-btn>
 
-                        <v-btn
-                          variant="outlined"
-                          color="success"
-                          @click="(stop = false), stopTraining()"
-                        >
-                          Finalizar Treinamento
-                        </v-btn>
-                      </template>
-                    </v-card>
+                          <v-btn
+                            variant="outlined"
+                            color="success"
+                            @click="(isActive.value = false), stopTraining()"
+                          >
+                            Finalizar Treinamento
+                          </v-btn>
+                        </template>
+                      </v-card>
+                    </template>
                   </v-dialog>
                 </td>
 
@@ -446,7 +555,14 @@
                 <td>{{ formatteDate(training.data_treinamento) }}</td>
                 <td>{{ training.start_treinamento_nome }}</td>
                 <td>
-                  {{ getTrainingTime(training.date_inicio, training.date_fim) }}
+                  {{
+                    getTrainingTime(
+                      training.date_inicio,
+                      training.date_fim,
+                      training.periodos_pausa_inicio,
+                      training.periodos_pausa_fim
+                    )
+                  }}
                 </td>
                 <!-- <td
                   :class="[
@@ -474,6 +590,7 @@ import { saveAs } from "file-saver";
 import VueJwtDecode from "vue-jwt-decode";
 import * as XLSX from "xlsx";
 import CaixaConfirmacao from "../components/CaixaConfirmação.vue";
+// import ChartApex from "../examples/Charts/ChartApex.vue";
 import ip from "../ip";
 import alert from "./components/Alert.vue";
 
@@ -483,6 +600,9 @@ export default {
 
   data() {
     return {
+      employeeCode: null,
+      employeesBeeped: [],
+
       gerentes: [],
 
       gerenteSelecionado: null,
@@ -531,6 +651,7 @@ export default {
     this.getAllTrainings();
     this.getAllFinishedTrainings();
     this.trainingsFilter();
+    this.getChartData();
   },
 
   methods: {
@@ -603,21 +724,87 @@ export default {
       return newNames;
     },
 
-    getTrainingTime(start, end) {
-      // Converte os timestamps para objetos Date
+    getEmployeeByCode(code) {
+      if (code.length === 14) {
+        axios
+          .get(`http://${ip}:3020/get-employee`, {
+            params: { bardCode: this.employeeCode },
+          })
+          .then((response) => {
+            const date = new Date();
+            if (!this.dadosTreinamento.data) {
+              this.dadosTreinamento.data = `${date.getDate()}/${
+                date.getMonth() + 1
+              }/${date.getFullYear()}`;
+            }
+
+            if (
+              !this.employeesBeeped.includes(
+                this.formateNames(response.data.nome, "format")
+              )
+            ) {
+              this.employeesBeeped.push(
+                this.formateNames(response.data.nome, "format")
+              );
+              this.dadosColaboradores.push(response.data);
+            }
+
+            this.employeeCode = "";
+          })
+          .catch((error) => {
+            console.error(
+              "Erro ao buscar colaborador por cod. barras: ",
+              error
+            );
+
+            return this.$refs.alert.mostrarAlerta(
+              "warning",
+              "warning",
+              "Atenção",
+              error.response.data
+            );
+          });
+      }
+    },
+
+    getTrainingTime(start, end, pauseStart, pauseEnd) {
+      // Tempo Total
       const startDate = new Date(start);
       const endDate = new Date(end);
+      const totalTime = endDate - startDate;
 
-      // Calcula a diferença em milissegundos
-      const diffMs = endDate - startDate;
+      let diffSeconds;
+      let diffMinutes;
+      let diffHours;
+      let formattedTime;
 
-      // Converte a diferença para segundos, minutos e horas
-      const diffSeconds = Math.floor((diffMs / 1000) % 60);
-      const diffMinutes = Math.floor((diffMs / (1000 * 60)) % 60);
-      const diffHours = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
+      if (pauseStart && pauseEnd) {
+        // Tempo Pausado
+        const pausesStart = pauseStart.split(",").map((time) => time.trim(""));
+        const pausesEnd = pauseEnd.split(",").map((time) => time.trim(""));
+        let pausedTime;
 
-      // Formata o resultado para horas, minutos e segundos
-      const formattedTime = `${diffHours}h ${diffMinutes}m ${diffSeconds}s`;
+        for (const index in pausesStart) {
+          pausedTime =
+            new Date(pausesEnd[index]) - new Date(pausesStart[index]);
+        }
+
+        // Tempo útil
+        const trainingTime = totalTime - pausedTime;
+
+        diffSeconds = Math.floor((trainingTime / 1000) % 60);
+        diffMinutes = Math.floor((trainingTime / (1000 * 60)) % 60);
+        diffHours = Math.floor((trainingTime / (1000 * 60 * 60)) % 24);
+        formattedTime = `${diffHours}h ${diffMinutes}m ${diffSeconds}s`;
+
+        return formattedTime;
+      }
+
+      // Tempo sem treinamentos
+      diffSeconds = Math.floor((totalTime / 1000) % 60);
+      diffMinutes = Math.floor((totalTime / (1000 * 60)) % 60);
+      diffHours = Math.floor((totalTime / (1000 * 60 * 60)) % 24);
+      formattedTime = `${diffHours}h ${diffMinutes}m ${diffSeconds}s`;
 
       return formattedTime;
     },
@@ -648,23 +835,21 @@ export default {
     },
 
     postTraining() {
-      // if (
-      //   !this.dadosTreinamento.nome ||
-      //   !this.dadosTreinamento.setor ||
-      //   !this.dadosTreinamento.data ||
-      //   !this.dadosTreinamento.fabrica ||
-      //   !this.dadosTreinamento.celula ||
-      //   !this.setorTreinamento ||
-      //   !this.gerenteSelecionado ||
-      //   !this.dadosColaboradores
-      // ) {
-      //   return this.$refs.alert.mostrarAlerta(
-      //     "warning",
-      //     "warning",
-      //     "Atenção",
-      //     "Todos os campos são obrigatórios."
-      //   );
-      // }
+      if (
+        !this.dadosTreinamento.nome ||
+        !this.dadosTreinamento.setor ||
+        !this.dadosTreinamento.data ||
+        !this.dadosTreinamento.fabrica ||
+        !this.dadosTreinamento.celula ||
+        !this.gerenteSelecionado
+      ) {
+        return this.$refs.alert.mostrarAlerta(
+          "warning",
+          "warning",
+          "Atenção",
+          "Todos os campos são obrigatórios."
+        );
+      }
 
       if (!this.verifyDate(this.dadosTreinamento.data)) {
         return this.$refs.alert.mostrarAlerta(
@@ -690,23 +875,10 @@ export default {
           treinamento: this.dadosTreinamento,
           gerente: this.gerenteSelecionado,
           usuario: this.decodeJwt().usuario,
-          unidade: "sest",
+          unidade: this.decodeJwt().unidade,
         })
         .then((response) => {
-          (this.gerenteSelecionado = null),
-            (this.gerenteSelecionadoColaborador = ""),
-            (this.setoresGerenteColaborador = []),
-            (this.setorGerente = ""),
-            (this.employeesByDepartment = {}),
-            (this.dadosTreinamento = {
-              nome: "",
-              setor: "",
-              data: null,
-              celula: null,
-              fabrica: "",
-            }),
-            (this.dadosColaboradores = []);
-          this.setorTreinamento = "";
+          this.resetForm();
 
           this.$refs.alert.mostrarAlerta(
             "success",
@@ -751,12 +923,12 @@ export default {
         .get(`http://${ip}:3020/get-all-trainings`, {
           params: {
             setor: this.setorFiltro,
-            unidadeDass: "sest",
+            unidadeDass: "SEST",
           },
         })
         .then((response) => {
           this.trainings = response.data.trainings;
-          console.log(this.trainings);
+
           this.finishedTrainings = response.data.finished;
           this.trainingsFilter();
         })
@@ -769,12 +941,12 @@ export default {
       axios
         .get(`http://${ip}:3020/get-all-finished-trainings`, {
           params: {
-            unidadeDass: "sest",
+            unidadeDass: "SEST",
           },
         })
         .then((response) => {
           this.finishedTrainings = response.data.trainings;
-          console.log(this.finishedTrainings);
+
           this.trainingsFilter();
         })
         .catch((error) => {
@@ -786,7 +958,7 @@ export default {
       axios
         .get(`http://${ip}:3020/getAllManagers`, {
           params: {
-            unidade: "sest",
+            unidade: "SEST",
           },
         })
         .then((response) => {
@@ -794,6 +966,19 @@ export default {
         })
         .catch((error) => {
           console.error("Erro ao consultar gerentes: ", error);
+        });
+    },
+
+    getChartData() {
+      axios
+        .get(`http://${ip}:3020/get-chart-data`, {
+          params: {},
+        })
+        .then(() => {
+          // console.log(response.data);
+        })
+        .catch((error) => {
+          console.error("Erro interno no serviodor: ", error);
         });
     },
 
@@ -816,7 +1001,6 @@ export default {
           .get(`http://${ip}:3020/get-emplpoyee-by-department/${department}`)
           .then((response) => {
             this.employeesByDepartment = response.data;
-            console.log(this.employeesByDepartment);
           })
           .catch((error) => {
             console.error(
@@ -890,18 +1074,17 @@ export default {
           "Atenção",
           `Colaboradores Ausentes: ${nomesFaltaram}`
         );
-      }
 
-      await delay();
+        await delay();
+      }
 
       axios
         .put(`http://${ip}:3020/start-training/${id}`, {
           user: this.decodeJwt().usuario,
-          unidade: "sest",
+          unidade: "SEST",
           absent: absent,
         })
         .then((response) => {
-          console.log(response.data);
           this.$refs.alert.mostrarAlerta(
             "success",
             "done_outline",
@@ -924,6 +1107,15 @@ export default {
     },
 
     pauseTraining(training, order) {
+      if (!this.decodeJwt()) {
+        return this.$refs.alert.mostrarAlerta(
+          "warning",
+          "warning",
+          "Atenção",
+          "Você precisa fazer login para prosseguir."
+        );
+      }
+
       let api = "";
 
       if (order === "pause") {
@@ -936,13 +1128,27 @@ export default {
         .put(`http://${ip}:3020/${api}`, {
           data: training,
           user: this.decodeJwt().usuario,
-          unidade: "sest",
+          unidade: "SEST",
         })
         .then((response) => {
-          console.log(response.data);
+          this.$refs.alert.mostrarAlerta(
+            "success",
+            "done_outline",
+            "Sucesso",
+            response.data
+          );
+
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
         })
         .catch((error) => {
-          console.error("Erro ao pausar treinamento: ", error);
+          return this.$refs.alert.mostrarAlerta(
+            "warning",
+            "warning",
+            "Atenção",
+            error.response.data
+          );
         });
     },
 
@@ -960,7 +1166,7 @@ export default {
         .put(`http://${ip}:3020/stop-training`, {
           data: this.avaliacaoColaborador,
           user: this.decodeJwt().usuario,
-          unidade: "sest",
+          unidade: this.decodeJwt().unidade,
         })
         .then((response) => {
           this.$refs.alert.mostrarAlerta(
@@ -1024,7 +1230,7 @@ export default {
           motivo: data.motivo,
           id: id,
           user: this.decodeJwt().usuario,
-          unidade: "sest",
+          unidade: "SEST",
         })
         .then((response) => {
           this.$refs.alert.mostrarAlerta(
@@ -1101,14 +1307,19 @@ export default {
           Colaborador: training.nome,
           Treinamento: training.treinamento,
           "Data Treinamento": this.formatteDate(training.data_treinamento),
+          "Data Início": training.date_inicio,
+          "Data Finalização": training.date_fim,
+          "Datas Pausas": training.periodos_pausa_inicio,
           "Tempo Treinamento": this.getTrainingTime(
             training.date_inicio,
-            training.date_fim
+            training.date_fim,
+            training.periodos_pausa_inicio,
+            training.periodos_pausa_fim
           ),
           Resultado: training.aprovado ? "Aprovado" : "Reprovado",
           Instrutor: training.start_treinamento_nome,
           Setor: training.treinamento_setor,
-          Celula: training.celula,
+          Célula: training.celula,
           "Gerente da Célula": training.gerente_celula,
         });
       });
@@ -1134,6 +1345,25 @@ export default {
         }),
         `relatorio-treinamentos-${this.formatteDate(currentDate)}.xlsx`
       );
+    },
+
+    resetForm() {
+      this.gerenteSelecionado = null;
+      this.gerenteSelecionadoColaborador = "";
+      this.setoresGerenteColaborador = [];
+      this.setorGerente = "";
+      this.employeesByDepartment = {};
+      this.dadosTreinamento = {
+        nome: "",
+        setor: "",
+        data: null,
+        celula: null,
+        fabrica: "",
+      };
+      this.dadosColaboradores = [];
+      this.setorTreinamento = "";
+      this.employeesBeeped = [];
+      this.employeeCode = "";
     },
   },
 };
@@ -1184,6 +1414,20 @@ export default {
   color: #4caf50;
 }
 
+.tabela .pause-button {
+  font-variation-settings:
+    "FILL" 1,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
+  color: #ffd700;
+  transition: all 0.3s ease;
+}
+
+.tabela .pause-button:hover {
+  transform: scale(1.1);
+}
+
 .play-button::before {
   content: "";
   position: absolute;
@@ -1201,6 +1445,40 @@ export default {
 .play-button:hover::before {
   animation: wave 1s ease-out infinite;
   opacity: 1;
+}
+
+/* Tabela Seleção de Colaboradores */
+.tabela-colaboradores {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabela-colaboradores thead {
+  font-size: 14px;
+  color: #4caf50;
+}
+.tabela-colaboradores tbody {
+  font-size: 12px;
+}
+.tabela-colaboradores th,
+.tabela-colaboradores td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+.tabela-colaboradores th {
+  background-color: #f2f2f2;
+}
+.tabela-colaboradores tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+.tabela-colaboradores tbody tr:hover {
+  background-color: #e8e8e8;
+}
+.tabela-colaboradores input[type="checkbox"] {
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
 }
 
 .report {
@@ -1256,6 +1534,41 @@ export default {
 
 .notChecked .material-icons {
   color: #dc3545;
+}
+
+.next-slide {
+  color: #2196f3 !important;
+  font-size: 30px;
+  padding: 8px;
+  border-radius: 50%;
+  box-shadow: rgba(100, 100, 111, 0.5) 0px 5px 10px 0px;
+}
+
+.beeped-employees {
+  background-color: rgba(33, 150, 243, 0.2);
+  margin: 5px 0;
+  padding: 8px;
+  border-radius: 8px;
+  overflow-y: auto;
+  max-height: 200px;
+}
+
+.beeped-employees ul {
+  list-style-type: none;
+}
+
+.beeped-employees .person {
+  display: flex;
+  align-items: center;
+  margin-top: 5px;
+}
+
+.beeped-employees .person i {
+  color: #fff;
+  background-color: #4caf50;
+  padding: 5px;
+  border-radius: 50%;
+  margin-right: 10px;
 }
 
 @keyframes wave {

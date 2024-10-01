@@ -49,9 +49,18 @@ app.get("/", (req, res) => {
 app.get("/buscaColaboradorPeloRfid", async (req, res) => {
   try {
     const rfid = req.query.rfid;
+    const unidade = req.query.unidade;
+
     const result = await pool.query(
-      "SELECT nome, matricula FROM colaborador.colaboradores WHERE rfid = $1",
-      [rfid]
+      `
+      SELECT nome, matricula 
+      FROM 
+        colaborador.colaboradores 
+      WHERE 
+        rfid = $1 AND
+        unidade = $2
+        `,
+      [rfid, unidade]
     );
     res.json(result.rows[0]);
   } catch (error) {
@@ -65,8 +74,8 @@ app.get("/buscaColaboradorPelaMatricula", async (req, res) => {
   try {
     const matricula = req.query.matricula;
     const result = await pool.query(
-      "SELECT nome FROM colaborador.lista_funcionario WHERE matricula = $1",
-      [matricula]
+      "SELECT nome FROM colaborador.colaboradores WHERE matricula = $1 AND unidade = $2",
+      [matricula, unidade]
     );
     res.json(result.rows[0].nome);
   } catch (error) {
@@ -130,6 +139,7 @@ app.get("/buscaConfiguracao", async (req, res) => {
 app.post("/salvaReserva", async (req, res) => {
   try {
     const { matricula, codigoRfid, opcaoSelecionada } = req.body;
+    let unidade = "SEST";
 
     if (!matricula || !codigoRfid || !opcaoSelecionada) {
       if (Number(matricula).length !== 7) {
@@ -138,27 +148,44 @@ app.post("/salvaReserva", async (req, res) => {
       return res.status(422).json({ error: "Dados inválidos ou ausentes" });
     }
 
-    const buscaColaboradorListaFuncionario = await pool.query(
-      "SELECT * FROM colaborador.lista_funcionario WHERE matricula = $1",
-      [matricula]
-    );
-    if (buscaColaboradorListaFuncionario.rows.length === 0) {
+    let buscaColaboradorListaFuncionario = `
+      SELECT * FROM colaborador.lista_funcionario`;
+
+    if (matricula.toString().startsWith("5")) {
+      buscaColaboradorListaFuncionario += `_itb`;
+      unidade = "ITB";
+    }
+
+    buscaColaboradorListaFuncionario += ` WHERE matricula = $1`;
+
+    const query = await pool.query(buscaColaboradorListaFuncionario, [
+      matricula,
+    ]);
+    // const buscaColaboradorListaFuncionario = await pool.query(
+    //   "SELECT * FROM colaborador.lista_funcionario WHERE matricula = $1",
+    //   [matricula]
+    // );
+
+    if (query.rows.length === 0) {
       return res.status(404).json({ error: "Colaborador não encontrado" });
     }
-    const { nome, gerente, nome_setor } =
-      buscaColaboradorListaFuncionario.rows[0];
+
+    const { nome, gerente, nome_setor } = query.rows[0];
 
     const verificaDisponibilidade = await pool.query(
-      "SELECT matricula FROM refeitorio.reserva WHERE date_trunc('day', createdate) = date_trunc('day', CURRENT_TIMESTAMP) AND rfid = $1 AND consumido = false ORDER BY id DESC",
-      [codigoRfid]
+      "SELECT matricula FROM refeitorio.reserva WHERE date_trunc('day', createdate) = date_trunc('day', CURRENT_TIMESTAMP) AND matricula = $1 AND consumido = false AND unidade = $2 ORDER BY id DESC",
+      [matricula, unidade]
     );
+
     if (verificaDisponibilidade.rowCount > 0) {
       return res.status(400).json({ error: "Sua reserva já foi cadastrada" });
     }
 
     const configuracao = await pool.query(
-      "SELECT * FROM refeitorio.configuracao ORDER BY id DESC LIMIT 1"
+      "SELECT * FROM refeitorio.configuracao WHERE unidade = $1 ORDER BY id DESC LIMIT 1",
+      [unidade]
     );
+
     const dataAmanhaParaReserva = configuracao.rows[0].dataamanha
       .toISOString()
       .split("T")[0];
@@ -171,7 +198,7 @@ app.post("/salvaReserva", async (req, res) => {
         : dataAmanhaParaReserva;
 
     const result = await pool.query(
-      "INSERT INTO refeitorio.reserva (createdate, matricula, nome, gerente, setor, opcao_selecionada, rfid, data_reserva) VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7)",
+      "INSERT INTO refeitorio.reserva (createdate, matricula, nome, gerente, setor, opcao_selecionada, rfid, data_reserva, unidade) VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7, $8)",
       [
         matricula,
         nome,
@@ -180,6 +207,7 @@ app.post("/salvaReserva", async (req, res) => {
         opcaoSelecionada.toUpperCase(),
         codigoRfid,
         dataReserva,
+        unidade,
       ]
     );
 
@@ -189,13 +217,13 @@ app.post("/salvaReserva", async (req, res) => {
     );
     if (buscaColaboradorRefeitorio.rows.length === 0) {
       await pool.query(
-        "INSERT INTO colaborador.colaboradores (rfid, matricula, nome) VALUES ($1, $2, $3)",
-        [codigoRfid, matricula, nome]
+        "INSERT INTO colaborador.colaboradores (rfid, matricula, nome, unidade) VALUES ($1, $2, $3, $4)",
+        [codigoRfid, matricula, nome, unidade]
       );
     } else {
       await pool.query(
-        "UPDATE colaborador.colaboradores SET rfid= $1, nome = $2 WHERE matricula = $3",
-        [codigoRfid, nome, matricula]
+        "UPDATE colaborador.colaboradores SET rfid= $1, nome = $2, unidade = $3 WHERE matricula = $4",
+        [codigoRfid, nome, unidade, matricula]
       );
     }
 
@@ -208,8 +236,15 @@ app.post("/salvaReserva", async (req, res) => {
 
 app.get("/buscaReservasDoDia", async (req, res) => {
   try {
+    const unidade = req.query.unidade;
+
     const result = await pool.query(
-      "SELECT * FROM refeitorio.reserva WHERE date_trunc('day', data_reserva) = date_trunc('day', CURRENT_TIMESTAMP) ORDER BY id ASC"
+      `SELECT * FROM refeitorio.reserva 
+      WHERE 
+        date_trunc('day', data_reserva) = date_trunc('day', CURRENT_TIMESTAMP) AND
+        unidade = $1
+      ORDER BY id ASC`,
+      [unidade]
     );
 
     const categorias = {
@@ -249,15 +284,19 @@ app.get("/buscaReservasDoDia", async (req, res) => {
 
 app.get("/buscaReservasAmanhaDoDia", async (req, res) => {
   try {
+    const unidade = req.query.unidade;
+
     const nextBusinessDay = getNextBusinessDay();
 
     const result = await pool.query(
       `
-            SELECT * FROM refeitorio.reserva 
-            WHERE date_trunc('day', data_reserva) = $1 
+            SELECT * FROM refeitorio.reserva
+            WHERE
+              date_trunc('day', data_reserva) = $1 AND
+              unidade = $2
             ORDER BY id ASC
         `,
-      [nextBusinessDay]
+      [nextBusinessDay, unidade]
     );
 
     const categorias = {
@@ -323,16 +362,44 @@ app.post("/entregaReservaPeloRfid", async (req, res) => {
   }
 
   try {
-    const verificaDisponibilidade = await pool.query(
-      "SELECT consumido FROM refeitorio.reserva WHERE date_trunc('day', data_reserva) = date_trunc('day', CURRENT_TIMESTAMP) AND rfid = $1 AND consumido = false ORDER BY id DESC",
+    const queryUnidadeByRfid = await pool.query(
+      `
+        SELECT unidade
+        FROM colaborador.colaboradores
+        WHERE rfid = $1
+      `,
       [codigoRfid]
+    );
+
+    const unidade = queryUnidadeByRfid.rows[0].unidade;
+
+    const verificaDisponibilidade = await pool.query(
+      `SELECT consumido
+      FROM refeitorio.reserva 
+      WHERE 
+        date_trunc('day', data_reserva) = date_trunc('day', CURRENT_TIMESTAMP) AND 
+        rfid = $1 AND 
+        consumido = false AND
+        unidade = $2
+      ORDER BY id DESC`,
+      [codigoRfid, unidade]
     );
 
     if (verificaDisponibilidade.rowCount > 0) {
       const result = await pool.query(
-        "UPDATE refeitorio.reserva SET consumido = true, data_consumo = NOW() WHERE date_trunc('day', data_reserva) = date_trunc('day', CURRENT_TIMESTAMP) AND rfid = $1 RETURNING *",
-        [codigoRfid]
+        `
+        UPDATE refeitorio.reserva 
+        SET 
+          consumido = true, 
+          data_consumo = NOW() 
+        WHERE 
+          date_trunc('day', data_reserva) = date_trunc('day', CURRENT_TIMESTAMP) AND 
+          rfid = $1 AND
+          unidade = $2
+        RETURNING *`,
+        [codigoRfid, unidade]
       );
+
       if (result.rowCount > 0) {
         return res.status(200).json({
           message: "Reserva concluída com sucesso",
@@ -343,28 +410,50 @@ app.post("/entregaReservaPeloRfid", async (req, res) => {
       return res.status(404).json({ error: "Reserva não encontrada" });
     }
   } catch (error) {
+    console.error("Erro: ", error);
     return res.status(500).json({ error: "Erro interno do servidor" });
   }
 });
 
 app.post("/entregaReservaPelaMatricula", async (req, res) => {
   const { matricula } = req.body;
+  let unidade = "SEST";
 
   if (!matricula) {
     return res.status(422).json({ error: "Leitura inválida" });
   }
 
   try {
+    if (matricula.toString().startsWith("5")) {
+      unidade = "ITB";
+    }
+
     const verificaDisponibilidade = await pool.query(
-      "SELECT consumido FROM refeitorio.reserva WHERE date_trunc('day', data_reserva) = date_trunc('day', CURRENT_TIMESTAMP) AND matricula = $1 AND consumido = false ORDER BY id DESC",
-      [matricula]
+      `SELECT consumido 
+      FROM refeitorio.reserva 
+      WHERE date_trunc('day', data_reserva) = date_trunc('day', CURRENT_TIMESTAMP) AND 
+        matricula = $1 AND 
+        consumido = false AND
+        unidade = $2
+      ORDER BY 
+        id DESC`,
+      [matricula, unidade]
     );
 
     if (verificaDisponibilidade.rowCount > 0) {
       const result = await pool.query(
-        "UPDATE refeitorio.reserva SET consumido = true, data_consumo = NOW() WHERE date_trunc('day', data_reserva) = date_trunc('day', CURRENT_TIMESTAMP) AND matricula = $1 RETURNING *",
-        [matricula]
+        `UPDATE refeitorio.reserva 
+        SET 
+          consumido = true, 
+          data_consumo = NOW() 
+        WHERE 
+          date_trunc('day', data_reserva) = date_trunc('day', CURRENT_TIMESTAMP) AND 
+          matricula = $1 AND
+          unidade = $2
+        RETURNING *`,
+        [matricula, unidade]
       );
+
       if (result.rowCount > 0) {
         return res.status(200).json({
           message: "Reserva concluída com sucesso",
@@ -374,35 +463,67 @@ app.post("/entregaReservaPelaMatricula", async (req, res) => {
     } else {
       return res.status(404).json({ error: "Reserva não encontrada" });
     }
+    res.send("hello");
   } catch (error) {
-    return res.status(500).json({ error: "Erro interno do servidor" });
+    console.error(error);
+    // return res.status(500).json({ error: "Erro interno do servidor" });
   }
 });
 
 // Busca gerentes
 app.get("/buscaNomesGerentes", async (req, res) => {
   let gerentes = [];
+  const unidade = req.query.unidade;
+
   try {
-    const result = await pool.query(
-      "SELECT DISTINCT gerente FROM colaborador.lista_funcionario ORDER BY gerente ASC"
-    );
+    let query = `SELECT DISTINCT gerente FROM colaborador.lista_funcionario ORDER BY gerente ASC`;
+
+    if (unidade === "VDC") {
+      query = `SELECT DISTINCT gerente FROM colaborador.lista_funcionario_vdc ORDER BY gerente ASC`;
+    } else if (unidade === "ITB") {
+      query = `SELECT DISTINCT gerente FROM colaborador.lista_funcionario_itb ORDER BY gerente ASC`;
+    }
+
+    const result = await pool.query(query);
+
     result.rows.map((item) => {
       gerentes.push(item.gerente);
     });
-    res.json(gerentes);
+    res.status(200).json(gerentes);
   } catch (error) {
     console.error("Erro ao buscar os nomes dos gerentes: ", error);
+    res.status(500).send("Erro interno no Servidor");
   }
 });
 
 app.get("/buscaSetores", async (req, res) => {
   try {
     const gerente = req.query.gerente;
-    const result = await pool.query(
-      `SELECT DISTINCT nome_setor FROM colaborador.lista_funcionario WHERE gerente = $1 ORDER BY nome_setor ASC`,
-      [gerente]
-    );
+    const unidade = req.query.unidade;
+
+    let query = `
+      SELECT DISTINCT nome_setor 
+      FROM colaborador.lista_funcionario 
+      WHERE gerente = $1 
+      ORDER BY nome_setor ASC`;
+
+    if (unidade === "VDC") {
+      query = `
+      SELECT DISTINCT nome_setor 
+      FROM colaborador.lista_funcionario_vdc
+      WHERE gerente = $1 
+      ORDER BY nome_setor ASC`;
+    } else if (unidade === "ITB") {
+      query = `
+      SELECT DISTINCT nome_setor 
+      FROM colaborador.lista_funcionario_itb 
+      WHERE gerente = $1 
+      ORDER BY nome_setor ASC`;
+    }
+
+    const result = await pool.query(query, [gerente]);
     const setores = result.rows.map((row) => row.nome_setor);
+
     res.json(setores);
   } catch (error) {
     res.status(500).json({ error: "Erro ao buscar setores por gerente" });
@@ -414,13 +535,50 @@ app.get("/buscaColaboradoresPorSetor", async (req, res) => {
     const dataReserva = req.query.dataReserva;
     const gerente = req.query.gerente;
     const setor = req.query.setor;
+    const unidade = req.query.unidade;
 
-    const resultLista = await pool.query(
-      "SELECT lf.*, CASE WHEN EXISTS (SELECT 1 FROM jsonb_array_elements(s.colaboradores) AS c(colab) WHERE (c.colab->>'matricula')::integer = lf.matricula) THEN 'Reservado' ELSE 'Sem Reserva' END AS disponibilidade, s.hora_reserva FROM colaborador.lista_funcionario lf LEFT JOIN (SELECT * FROM refeitorio.sabado s WHERE data_reserva = $1) s ON lf.matricula = ANY (ARRAY(SELECT (jsonb_array_elements(s.colaboradores)->>'matricula')::integer)) WHERE lf.gerente = $2 AND lf.nome_setor = $3 ORDER BY lf.nome;",
-      [dataReserva, gerente, setor]
-    );
-    res.json(resultLista.rows);
+    let query = `
+      SELECT 
+          lf.*, 
+          CASE 
+              WHEN EXISTS (
+                  SELECT 1 
+                  FROM jsonb_array_elements(s.colaboradores) AS c(colab) 
+                  WHERE (c.colab->>'matricula')::integer = lf.matricula
+              ) 
+              THEN 'Reservado' 
+              ELSE 'Sem Reserva' 
+          END AS disponibilidade, 
+          s.hora_reserva 
+      FROM 
+          colaborador.lista_funcionario`;
+    if (unidade === "ITB") {
+      query += `_itb`;
+    } else if (unidade === "VDC") {
+      query += `_vdc`;
+    }
+
+    query += ` lf 
+        LEFT JOIN (
+            SELECT * 
+            FROM refeitorio.sabado s 
+            WHERE data_reserva = $1
+        ) s 
+        ON lf.matricula = ANY (
+            ARRAY(SELECT (jsonb_array_elements(s.colaboradores)->>'matricula')::integer)
+        ) 
+        WHERE 
+            lf.gerente = $2 
+            AND lf.nome_setor = $3 
+        ORDER BY 
+            lf.nome;
+          `;
+
+    const result = await pool.query(query, [dataReserva, gerente, setor]);
+
+    res.json(result.rows);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Erro ao buscar colaboradores" });
   }
 });
@@ -436,6 +594,7 @@ app.post("/salvarReservaSabado", async (req, res) => {
       colaboradores,
       gerenteDestino,
       setorDestino,
+      unidade,
     } = req.body;
 
     if (
@@ -453,7 +612,8 @@ app.post("/salvarReservaSabado", async (req, res) => {
         .json({ message: "Dados obrigatórios não foram preenchidos" });
     } else {
       const salvaReservaSabado = await pool.query(
-        "INSERT INTO refeitorio.sabado (createdate, setor_selecionado, gerente_selecionado, data_reserva, hora_reserva, usuariocreate, colaboradores, gerente_destino, setor_destino) VALUES('NOW()', $1, $2, $3, $4, $5, $6, $7, $8);",
+        `INSERT INTO refeitorio.sabado (createdate, setor_selecionado, gerente_selecionado, data_reserva, hora_reserva, usuariocreate, colaboradores, gerente_destino, setor_destino, unidade)
+        VALUES('NOW()', $1, $2, $3, $4, $5, $6, $7, $8, $9);`,
         [
           setorSelecionado,
           gerenteSelecionado,
@@ -463,6 +623,7 @@ app.post("/salvarReservaSabado", async (req, res) => {
           colaboradores,
           gerenteDestino,
           setorDestino,
+          unidade,
         ]
       );
       res.status(200).json({ message: "Reserva salva com sucesso" });
@@ -475,20 +636,23 @@ app.post("/salvarReservaSabado", async (req, res) => {
 
 app.get("/buscaGerenteReservadoSabado", async (req, res) => {
   try {
+    const unidade = req.query.unidade;
+
     const sabado = getNextSaturday();
     let gerenteReservado = [];
 
     const result = await pool.query(
-      "SELECT DISTINCT gerente_destino FROM refeitorio.sabado WHERE data_reserva = $1 ORDER BY gerente_destino ASC",
-      [sabado]
+      "SELECT DISTINCT gerente_destino FROM refeitorio.sabado WHERE data_reserva = $1 AND unidade = $2 ORDER BY gerente_destino ASC",
+      [sabado, unidade]
     );
 
     result.rows.map((item) => {
       gerenteReservado.push(item.gerente_destino);
     });
+
     res.json(gerenteReservado);
   } catch (error) {
-    console.error(error.message);
+    console.error(error);
     res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
@@ -497,12 +661,20 @@ app.get("/geraVoucherPeloGerente", async (req, res) => {
   try {
     const gerente = req.query.gerente;
     const dataReserva = req.query.dataReserva;
+    const unidade = req.query.unidade;
+
     let dadosDocumento = [];
 
     const result = await pool.query(
-      "SELECT * FROM refeitorio.sabado WHERE gerente_destino = $1 AND data_reserva = $2",
-      [gerente, dataReserva]
+      `
+      SELECT * FROM refeitorio.sabado 
+      WHERE 
+        gerente_destino = $1 AND 
+        data_reserva = $2 AND
+        unidade = $3`,
+      [gerente, dataReserva, unidade]
     );
+
     result.rows.map((item) => {
       item.colaboradores.map((item2) => {
         dadosDocumento.push({
@@ -517,15 +689,17 @@ app.get("/geraVoucherPeloGerente", async (req, res) => {
         });
       });
     });
+
     res.json(dadosDocumento);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 app.get("/geraRelatorioLancheSabado", async (req, res) => {
   try {
-    const { tipoRelatorio, dataInicial, dataFinal, turno } = req.query;
+    const { tipoRelatorio, dataInicial, dataFinal, turno, unidade } = req.query;
 
     function selecionaTurno(turno) {
       if (turno === "Turno A") {
@@ -536,31 +710,45 @@ app.get("/geraRelatorioLancheSabado", async (req, res) => {
         return "";
       }
     }
-
     const turnoClause = selecionaTurno(turno);
 
-    const lancheQuery = `
-            SELECT * FROM refeitorio.reserva 
-            WHERE data_reserva BETWEEN $1 AND $2 ${turnoClause} 
+    let lancheQuery = `
+            SELECT * FROM 
+              refeitorio.reserva
+            WHERE 
+              unidade = $1 AND
+              data_reserva BETWEEN $2 AND $3 ${turnoClause} 
+            ORDER BY id`;
+    let sabadoQuery = `
+            SELECT * FROM 
+              refeitorio.sabado
+            WHERE 
+              unidade = $1 AND
+              data_reserva BETWEEN $2 AND $3 ${turnoClause} 
             ORDER BY id
-        `;
-    const sabadoQuery = `
-            SELECT * FROM refeitorio.sabado 
-            WHERE data_reserva BETWEEN $1 AND $2 ${turnoClause} 
-            ORDER BY id
-        `;
-
-    const lanche = await pool.query(lancheQuery, [dataInicial, dataFinal]);
-    const sabado = await pool.query(sabadoQuery, [dataInicial, dataFinal]);
+            `;
 
     if (tipoRelatorio === "Lanche") {
+      const lanche = await pool.query(lancheQuery, [
+        unidade,
+        dataInicial,
+        dataFinal,
+      ]);
+
       res.json(lanche.rows);
     } else if (tipoRelatorio === "Sábado") {
+      const sabado = await pool.query(sabadoQuery, [
+        unidade,
+        dataInicial,
+        dataFinal,
+      ]);
+
       res.json(sabado.rows);
     } else {
       res.status(400).json("Tipo de relatório inválido");
     }
   } catch (error) {
+    console.error(error);
     res
       .status(500)
       .json({ error: "Erro ao trazer dados do relatório: " + error.message });
@@ -570,33 +758,51 @@ app.get("/geraRelatorioLancheSabado", async (req, res) => {
 app.get("/geraRelatorioQuantidadeSabado", async (req, res) => {
   try {
     const dataReserva = req.query.dataReserva;
-    const relatorio = await pool.query(
-      "SELECT DISTINCT data_reserva,  hora_reserva, COUNT(hora_reserva) AS quantidade_hora FROM refeitorio.sabado WHERE data_reserva = $1 GROUP BY data_reserva, hora_reserva",
-      [dataReserva]
-    );
+    const unidade = req.query.unidade;
+
+    let query = `
+    SELECT DISTINCT
+        data_reserva,
+        hora_reserva,
+        COUNT(hora_reserva) AS quantidade_hora
+      FROM
+       refeitorio.sabado
+      WHERE 
+        data_reserva = $1 AND
+        unidade = $2
+      GROUP BY 
+        data_reserva, hora_reserva`;
+    const relatorio = await pool.query(query, [dataReserva, unidade]);
+
     res.json(relatorio.rows);
   } catch (error) {
+    console.error(error);
     res.status(500).json("Erro ao trazer quantidade de reservas: ", error);
   }
 });
 
 app.get("/buscaDadoGlobaisAuditorias", async (req, res) => {
   try {
+    const unidade = req.query.unidade;
+    console.log(unidade);
+
     const result = await pool.query(
-      `SELECT EXTRACT(MONTH FROM data_reserva) AS mes, 
-        EXTRACT(YEAR FROM data_reserva) AS ano, 
-        COUNT(*) AS total_reservado, 
-        COUNT(CASE WHEN consumido THEN 1 END) AS total_consumido 
-      FROM 
-        refeitorio.reserva 
-      WHERE 
-        data_reserva < CURRENT_DATE AND 
-        EXTRACT(YEAR FROM data_reserva) = EXTRACT(YEAR FROM CURRENT_DATE) 
-      GROUP BY 
-        EXTRACT(YEAR FROM data_reserva), 
-        EXTRACT(MONTH FROM data_reserva) 
-      ORDER BY 
-        ano, mes;`
+      `SELECT EXTRACT(MONTH FROM data_reserva) AS mes,
+        EXTRACT(YEAR FROM data_reserva) AS ano,
+        COUNT(*) AS total_reservado,
+        COUNT(CASE WHEN consumido THEN 1 END) AS total_consumido
+      FROM
+        refeitorio.reserva
+      WHERE
+        data_reserva < CURRENT_DATE AND
+        EXTRACT(YEAR FROM data_reserva) = EXTRACT(YEAR FROM CURRENT_DATE) AND
+        unidade = $1
+      GROUP BY
+        EXTRACT(YEAR FROM data_reserva),
+        EXTRACT(MONTH FROM data_reserva)
+      ORDER BY
+        ano, mes;`,
+      [unidade]
     );
 
     res.json(result.rows);

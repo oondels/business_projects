@@ -503,7 +503,7 @@ export default {
         .get(`http://${ip}:3045/pacoteSolicitacao`)
         .then((response) => {
           this.solicitacoesPacote = response.data;
-
+          console.log(response.data);
           this.filtroSolicitacoes();
         })
         .catch((error) => {

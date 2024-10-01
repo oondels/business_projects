@@ -161,6 +161,7 @@ export default {
           dataReserva: this.dataReserva,
           horaReserva: this.horaReserva,
           usuarioCreate: this.decodeJwt().usuario,
+          unidade: this.decodeJwt().unidade,
         })
         .then((response) => {
           if (response.status === 200) {

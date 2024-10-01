@@ -10,7 +10,6 @@ import { PRIVATE_KEY, tokenValidated } from "./auth.js";
 import { pool } from "./db.cjs";
 
 import axios from "axios";
-import geoip from "geoip-lite";
 
 // Função para obter o caminho do diretório atual em ES Modules
 const __filename = fileURLToPath(import.meta.url);
