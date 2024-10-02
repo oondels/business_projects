@@ -6,6 +6,7 @@ import SignIn from "../views/SignIn.vue";
 import SignUp from "../views/SignUp.vue";
 
 import Treinamentos from "../views/CadastroTreinamento.vue";
+import CadastroUsuarios from "../views/CadastroUsuarios.vue";
 import FerramentasLean from "../views/FerramentasLean.vue";
 import Informativo from "../views/Informativo.vue";
 import InformativoResultado from "../views/InformativoResultado.vue";
@@ -63,6 +64,11 @@ const routes = [
     path: "/aplicacoes",
     name: "Aplicações",
     component: Aplicacoes,
+  },
+  {
+    path: "/cadastro-usuarios",
+    name: "CadastroUsuarios",
+    component: CadastroUsuarios,
   },
 
   {

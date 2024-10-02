@@ -503,7 +503,7 @@
                 <td>{{ training.celula }}</td>
                 <td class="col-status" v-if="training.pausado">Pausado</td>
                 <td class="col-status" v-else-if="training.iniciado">
-                  Pausado
+                  Em Andamento
                 </td>
                 <td class="col-status" v-else-if="training.cancelado">
                   Cancelado

@@ -18,7 +18,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "votacao": "nodemon src/votacao.js",
     "diesel": "nodemon src/dieselControl.js",
-    "treinamentos": "nodemon src/treinamentos.js"
+    "treinamentos": "nodemon src/treinamentos.js",
+    "cadastro": "nodemon src/register-user.js"
   },
   "keywords": [
     "start"
