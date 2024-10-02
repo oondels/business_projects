@@ -26,6 +26,7 @@
   "author": "Dass Sest",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.7.7",
     "cors": "^2.8.5",
     "docxtemplater": "^3.47.2",
     "dotenv": "^16.3.1",

@@ -227,7 +227,10 @@ export default {
     buscaColaboradorPelaMatricula(matricula) {
       axios
         .get(`http://${ip}:3048/buscaColaboradorPelaMatricula`, {
-          params: { matricula: matricula },
+          params: {
+            matricula: matricula,
+            unidade: this.decodeJwt().unidade,
+          },
         })
         .then((response) => {
           if (!response.data) {

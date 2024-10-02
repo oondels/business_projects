@@ -58,7 +58,7 @@ app.get("/buscaColaboradorPeloRfid", async (req, res) => {
         colaborador.colaboradores 
       WHERE 
         rfid = $1 AND
-        unidade = $2
+        unidade_dass = $2
         `,
       [rfid, unidade]
     );
@@ -73,12 +73,21 @@ app.get("/buscaColaboradorPeloRfid", async (req, res) => {
 app.get("/buscaColaboradorPelaMatricula", async (req, res) => {
   try {
     const matricula = req.query.matricula;
+    const unidade = req.query.unidade;
     const result = await pool.query(
-      "SELECT nome FROM colaborador.colaboradores WHERE matricula = $1 AND unidade = $2",
+      `
+      SELECT 
+        nome 
+      FROM 
+        colaborador.colaboradores 
+      WHERE 
+        matricula = $1 AND 
+        unidade_dass = $2`,
       [matricula, unidade]
     );
     res.json(result.rows[0].nome);
   } catch (error) {
+    console.error(error);
     res
       .status(500)
       .json({ error: "Erro ao buscar colaborador pela MATRICULA: ", error });
@@ -173,7 +182,7 @@ app.post("/salvaReserva", async (req, res) => {
     const { nome, gerente, nome_setor } = query.rows[0];
 
     const verificaDisponibilidade = await pool.query(
-      "SELECT matricula FROM refeitorio.reserva WHERE date_trunc('day', createdate) = date_trunc('day', CURRENT_TIMESTAMP) AND matricula = $1 AND consumido = false AND unidade = $2 ORDER BY id DESC",
+      "SELECT matricula FROM refeitorio.reserva WHERE date_trunc('day', createdate) = date_trunc('day', CURRENT_TIMESTAMP) AND matricula = $1 AND consumido = false AND unidade_dass = $2 ORDER BY id DESC",
       [matricula, unidade]
     );
 
@@ -182,7 +191,7 @@ app.post("/salvaReserva", async (req, res) => {
     }
 
     const configuracao = await pool.query(
-      "SELECT * FROM refeitorio.configuracao WHERE unidade = $1 ORDER BY id DESC LIMIT 1",
+      "SELECT * FROM refeitorio.configuracao WHERE unidade_dass = $1 ORDER BY id DESC LIMIT 1",
       [unidade]
     );
 
@@ -198,7 +207,7 @@ app.post("/salvaReserva", async (req, res) => {
         : dataAmanhaParaReserva;
 
     const result = await pool.query(
-      "INSERT INTO refeitorio.reserva (createdate, matricula, nome, gerente, setor, opcao_selecionada, rfid, data_reserva, unidade) VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7, $8)",
+      "INSERT INTO refeitorio.reserva (createdate, matricula, nome, gerente, setor, opcao_selecionada, rfid, data_reserva, unidade_dass) VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7, $8)",
       [
         matricula,
         nome,
@@ -217,12 +226,12 @@ app.post("/salvaReserva", async (req, res) => {
     );
     if (buscaColaboradorRefeitorio.rows.length === 0) {
       await pool.query(
-        "INSERT INTO colaborador.colaboradores (rfid, matricula, nome, unidade) VALUES ($1, $2, $3, $4)",
+        "INSERT INTO colaborador.colaboradores (rfid, matricula, nome, unidade_dass) VALUES ($1, $2, $3, $4)",
         [codigoRfid, matricula, nome, unidade]
       );
     } else {
       await pool.query(
-        "UPDATE colaborador.colaboradores SET rfid= $1, nome = $2, unidade = $3 WHERE matricula = $4",
+        "UPDATE colaborador.colaboradores SET rfid= $1, nome = $2, unidade_dass = $3 WHERE matricula = $4",
         [codigoRfid, nome, unidade, matricula]
       );
     }
@@ -242,7 +251,7 @@ app.get("/buscaReservasDoDia", async (req, res) => {
       `SELECT * FROM refeitorio.reserva 
       WHERE 
         date_trunc('day', data_reserva) = date_trunc('day', CURRENT_TIMESTAMP) AND
-        unidade = $1
+        unidade_dass = $1
       ORDER BY id ASC`,
       [unidade]
     );
@@ -293,7 +302,7 @@ app.get("/buscaReservasAmanhaDoDia", async (req, res) => {
             SELECT * FROM refeitorio.reserva
             WHERE
               date_trunc('day', data_reserva) = $1 AND
-              unidade = $2
+              unidade_dass = $2
             ORDER BY id ASC
         `,
       [nextBusinessDay, unidade]
@@ -355,7 +364,7 @@ app.delete("/delete-reserva", async (req, res) => {
 });
 
 app.post("/entregaReservaPeloRfid", async (req, res) => {
-  const { codigoRfid } = req.body;
+  const { codigoRfid, unidade } = req.body;
 
   if (!codigoRfid) {
     return res.status(422).json({ error: "Leitura inválida" });
@@ -364,23 +373,23 @@ app.post("/entregaReservaPeloRfid", async (req, res) => {
   try {
     const queryUnidadeByRfid = await pool.query(
       `
-        SELECT unidade
+        SELECT unidade_dass
         FROM colaborador.colaboradores
         WHERE rfid = $1
       `,
       [codigoRfid]
     );
 
-    const unidade = queryUnidadeByRfid.rows[0].unidade;
-
+    const unidade = queryUnidadeByRfid.rows[0].unidade_dass;
+    console.log(unidade);
     const verificaDisponibilidade = await pool.query(
       `SELECT consumido
-      FROM refeitorio.reserva 
-      WHERE 
-        date_trunc('day', data_reserva) = date_trunc('day', CURRENT_TIMESTAMP) AND 
-        rfid = $1 AND 
+      FROM refeitorio.reserva
+      WHERE
+        date_trunc('day', data_reserva) = date_trunc('day', CURRENT_TIMESTAMP) AND
+        rfid = $1 AND
         consumido = false AND
-        unidade = $2
+        unidade_dass = $2
       ORDER BY id DESC`,
       [codigoRfid, unidade]
     );
@@ -388,14 +397,14 @@ app.post("/entregaReservaPeloRfid", async (req, res) => {
     if (verificaDisponibilidade.rowCount > 0) {
       const result = await pool.query(
         `
-        UPDATE refeitorio.reserva 
-        SET 
-          consumido = true, 
-          data_consumo = NOW() 
-        WHERE 
-          date_trunc('day', data_reserva) = date_trunc('day', CURRENT_TIMESTAMP) AND 
+        UPDATE refeitorio.reserva
+        SET
+          consumido = true,
+          data_consumo = NOW()
+        WHERE
+          date_trunc('day', data_reserva) = date_trunc('day', CURRENT_TIMESTAMP) AND
           rfid = $1 AND
-          unidade = $2
+          unidade_dass = $2
         RETURNING *`,
         [codigoRfid, unidade]
       );
@@ -434,7 +443,7 @@ app.post("/entregaReservaPelaMatricula", async (req, res) => {
       WHERE date_trunc('day', data_reserva) = date_trunc('day', CURRENT_TIMESTAMP) AND 
         matricula = $1 AND 
         consumido = false AND
-        unidade = $2
+        unidade_dass = $2
       ORDER BY 
         id DESC`,
       [matricula, unidade]
@@ -449,7 +458,7 @@ app.post("/entregaReservaPelaMatricula", async (req, res) => {
         WHERE 
           date_trunc('day', data_reserva) = date_trunc('day', CURRENT_TIMESTAMP) AND 
           matricula = $1 AND
-          unidade = $2
+          unidade_dass = $2
         RETURNING *`,
         [matricula, unidade]
       );
@@ -463,10 +472,9 @@ app.post("/entregaReservaPelaMatricula", async (req, res) => {
     } else {
       return res.status(404).json({ error: "Reserva não encontrada" });
     }
-    res.send("hello");
   } catch (error) {
     console.error(error);
-    // return res.status(500).json({ error: "Erro interno do servidor" });
+    return res.status(500).json({ error: "Erro interno do servidor" });
   }
 });
 
@@ -612,7 +620,7 @@ app.post("/salvarReservaSabado", async (req, res) => {
         .json({ message: "Dados obrigatórios não foram preenchidos" });
     } else {
       const salvaReservaSabado = await pool.query(
-        `INSERT INTO refeitorio.sabado (createdate, setor_selecionado, gerente_selecionado, data_reserva, hora_reserva, usuariocreate, colaboradores, gerente_destino, setor_destino, unidade)
+        `INSERT INTO refeitorio.sabado (createdate, setor_selecionado, gerente_selecionado, data_reserva, hora_reserva, usuariocreate, colaboradores, gerente_destino, setor_destino, unidade_dass)
         VALUES('NOW()', $1, $2, $3, $4, $5, $6, $7, $8, $9);`,
         [
           setorSelecionado,
@@ -642,7 +650,7 @@ app.get("/buscaGerenteReservadoSabado", async (req, res) => {
     let gerenteReservado = [];
 
     const result = await pool.query(
-      "SELECT DISTINCT gerente_destino FROM refeitorio.sabado WHERE data_reserva = $1 AND unidade = $2 ORDER BY gerente_destino ASC",
+      "SELECT DISTINCT gerente_destino FROM refeitorio.sabado WHERE data_reserva = $1 AND unidade_dass = $2 ORDER BY gerente_destino ASC",
       [sabado, unidade]
     );
 
@@ -671,7 +679,7 @@ app.get("/geraVoucherPeloGerente", async (req, res) => {
       WHERE 
         gerente_destino = $1 AND 
         data_reserva = $2 AND
-        unidade = $3`,
+        unidade_dass = $3`,
       [gerente, dataReserva, unidade]
     );
 
@@ -716,14 +724,14 @@ app.get("/geraRelatorioLancheSabado", async (req, res) => {
             SELECT * FROM 
               refeitorio.reserva
             WHERE 
-              unidade = $1 AND
+              unidade_dass = $1 AND
               data_reserva BETWEEN $2 AND $3 ${turnoClause} 
             ORDER BY id`;
     let sabadoQuery = `
             SELECT * FROM 
               refeitorio.sabado
             WHERE 
-              unidade = $1 AND
+              unidade_dass = $1 AND
               data_reserva BETWEEN $2 AND $3 ${turnoClause} 
             ORDER BY id
             `;
@@ -769,7 +777,7 @@ app.get("/geraRelatorioQuantidadeSabado", async (req, res) => {
        refeitorio.sabado
       WHERE 
         data_reserva = $1 AND
-        unidade = $2
+        unidade_dass = $2
       GROUP BY 
         data_reserva, hora_reserva`;
     const relatorio = await pool.query(query, [dataReserva, unidade]);
@@ -784,7 +792,6 @@ app.get("/geraRelatorioQuantidadeSabado", async (req, res) => {
 app.get("/buscaDadoGlobaisAuditorias", async (req, res) => {
   try {
     const unidade = req.query.unidade;
-    console.log(unidade);
 
     const result = await pool.query(
       `SELECT EXTRACT(MONTH FROM data_reserva) AS mes,
@@ -796,7 +803,7 @@ app.get("/buscaDadoGlobaisAuditorias", async (req, res) => {
       WHERE
         data_reserva < CURRENT_DATE AND
         EXTRACT(YEAR FROM data_reserva) = EXTRACT(YEAR FROM CURRENT_DATE) AND
-        unidade = $1
+        unidade_dass = $1
       GROUP BY
         EXTRACT(YEAR FROM data_reserva),
         EXTRACT(MONTH FROM data_reserva)
@@ -807,6 +814,7 @@ app.get("/buscaDadoGlobaisAuditorias", async (req, res) => {
 
     res.json(result.rows);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Erro ao buscar dados globais" });
   }
 });
