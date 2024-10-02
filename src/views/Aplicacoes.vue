@@ -4,7 +4,7 @@
   </div>
 
   <div class="mb-4 row col-12">
-    <div class="col-4 mb-4 aplication-card">
+    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
       <a
         class="ambulatorio"
         @mouseover.self="addHover"
@@ -18,7 +18,7 @@
       </a>
     </div>
 
-    <div class="col-4 mb-4 aplication-card">
+    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
       <router-link
         class="ferramentas-lean"
         @mouseover.self="addHover"
@@ -32,7 +32,10 @@
       </router-link>
     </div>
 
-    <div class="col-4 mb-4 aplication-card" v-if="construcao()">
+    <div
+      class="col-4 mb-4 aplication-card"
+      v-if="construcao() && permissionSestApps"
+    >
       <router-link
         class="baixaProduto"
         @mouseover.self="addHover"
@@ -47,7 +50,7 @@
       </router-link>
     </div>
 
-    <div class="col-4 mb-4 aplication-card">
+    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
       <a
         class="gerenciamento"
         @mouseover.self="addHover"
@@ -62,7 +65,7 @@
       </a>
     </div>
 
-    <div class="col-4 mb-4 aplication-card">
+    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
       <router-link
         to="/pcp"
         class="pcp"
@@ -76,7 +79,7 @@
       </router-link>
     </div>
 
-    <div class="col-4 mb-4 aplication-card">
+    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
       <a
         href="http://10.100.1.43/pe_confirmado/"
         class="pe_confirmado"
@@ -90,7 +93,7 @@
       </a>
     </div>
 
-    <div class="col-4 mb-4 aplication-card">
+    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
       <router-link
         to="/manutencao"
         class="manutencao"
@@ -104,7 +107,7 @@
       </router-link>
     </div>
 
-    <div class="col-4 mb-4 aplication-card">
+    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
       <a
         href="http://10.100.1.43/pense&aja-sest/"
         class="penseAja"
@@ -118,7 +121,7 @@
       </a>
     </div>
 
-    <div class="col-4 mb-4 aplication-card">
+    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
       <a
         href="http://192.168.26.90/producao"
         target="_blank"
@@ -133,7 +136,7 @@
       </a>
     </div>
 
-    <div class="col-4 mb-4 aplication-card">
+    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
       <router-link
         to="/quimico"
         class="quimico"
@@ -147,7 +150,10 @@
       </router-link>
     </div>
 
-    <div class="col-4 mb-4 aplication-card" v-if="permissaoDP()">
+    <div
+      class="col-4 mb-4 aplication-card"
+      v-if="permissaoDP() && permissionSestApps"
+    >
       <router-link
         to="/departamento-pessoal"
         class="departamento-pessoal"
@@ -161,7 +167,7 @@
       </router-link>
     </div>
 
-    <div class="col-4 mb-4 aplication-card">
+    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
       <router-link
         to="/refeitorio"
         class="refeitorio"
@@ -175,7 +181,7 @@
       </router-link>
     </div>
 
-    <div class="col-4 mb-4 aplication-card">
+    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
       <a
         href="http://10.100.1.43:3000"
         target="_blank"
@@ -190,7 +196,7 @@
       </a>
     </div>
 
-    <div class="col-4 mb-4 aplication-card">
+    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
       <router-link
         to="/sorteio"
         class="sorteio"
@@ -204,7 +210,7 @@
       </router-link>
     </div>
 
-    <div class="col-4 mb-4 aplication-card">
+    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
       <router-link
         to="/tempos&metodos"
         class="tempos-metodos"
@@ -218,7 +224,7 @@
       </router-link>
     </div>
 
-    <div class="col-4 mb-4 aplication-card">
+    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
       <router-link
         to="/treinamentos"
         class="treinamentos"
@@ -278,7 +284,7 @@ export default {
   mounted() {
     this.permissaoDP();
     this.permissaoPcp();
-    this.getGeoLocation();
+    this.sestPermission();
   },
 
   methods: {
@@ -309,13 +315,13 @@ export default {
       }
     },
 
-    getGeoLocation() {
+    sestPermission() {
       axios
-        .get(`http://${ip}:3041/geo-location`)
+        .get(`http://${ip}:3041/sest-permission`)
         .then((response) => {
-          console.log(response.data);
-          this.city = response.data.city;
-          console.log(this.city);
+          this.permissionSestApps = response.data;
+
+          console.log(this.permissionSestApps);
         })
         .catch((error) => {
           console.error("Erro consultar geolocation: ", error);
@@ -394,7 +400,7 @@ export default {
       onHover: false,
       currentPenseAjaImage: penseajaImg,
 
-      city: "",
+      permissionSestApps: false,
 
       ambulatorioImg: ambulatorioImg,
       baixaProdutoImg: baixaProdutoImg,

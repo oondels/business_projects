@@ -120,16 +120,20 @@ app.post("/recuperar", async (req, res) => {
   }
 });
 
-app.get("/geo-location", async (req, res) => {
+app.get("/sest-permission", async (req, res) => {
   try {
+    const sestIps = ["177.69.130.129", "131.161.250.225", "187.111.192.78"];
+
     const ipResponse = await axios.get("https://api.ipify.org?format=json");
     const publicIp = ipResponse.data.ip;
 
-    const geoResponse = await axios.get(
-      `https://ipinfo.io/${publicIp}?token=6b0724aa2eaca3`
-    );
+    const sestPermission = sestIps.includes(publicIp);
 
-    res.send(geoResponse.data);
+    if (!sestPermission) {
+      res.status(403).send(sestPermission);
+    }
+
+    res.status(200).send(sestPermission);
   } catch (error) {
     console.error("Erro interno no serviodor ", error);
   }
