@@ -1,1 +1,0 @@
-NODE_ENV=production pm2 restart ecosystem.config.cjs
