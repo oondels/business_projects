@@ -167,7 +167,7 @@
       </router-link>
     </div>
 
-    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
+    <div class="col-4 mb-4 aplication-card">
       <router-link
         to="/refeitorio"
         class="refeitorio"
@@ -241,7 +241,7 @@
 
   <hr />
 
-  <div class="dashboards">
+  <div v-if="permissionSestApps" class="dashboards">
     <div class="title-aplicacoes">
       <h6 class="mb-4">Dashboards</h6>
     </div>
@@ -324,7 +324,7 @@ export default {
           console.log(this.permissionSestApps);
         })
         .catch((error) => {
-          console.error("Erro consultar geolocation: ", error);
+          console.error(error);
         });
     },
 

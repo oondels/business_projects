@@ -9,7 +9,7 @@ import { ip } from "../ip.js";
 import { PRIVATE_KEY, tokenValidated } from "./auth.js";
 import { pool } from "./db.cjs";
 
-import axios from "axios";
+import https from "https";
 
 // Função para obter o caminho do diretório atual em ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -124,16 +124,31 @@ app.get("/sest-permission", async (req, res) => {
   try {
     const sestIps = ["177.69.130.129", "131.161.250.225", "187.111.192.78"];
 
-    const ipResponse = await axios.get("https://api.ipify.org?format=json");
-    const publicIp = ipResponse.data.ip;
+    https
+      .get("https://api.ipify.org?format=json", (resp) => {
+        let data = "";
 
-    const sestPermission = sestIps.includes(publicIp);
+        // Recebe dados em partes
+        resp.on("data", (chunk) => {
+          data += chunk;
+        });
 
-    if (!sestPermission) {
-      res.status(403).send(sestPermission);
-    }
+        // Fim da resposta
+        resp.on("end", () => {
+          const publicIp = JSON.parse(data).ip;
+          const sestPermission = sestIps.includes(publicIp);
 
-    res.status(200).send(sestPermission);
+          if (!sestPermission) {
+            return res.status(403).send(sestPermission);
+          }
+
+          res.status(200).send(sestPermission);
+        });
+      })
+      .on("error", (err) => {
+        console.error("Erro na solicitação: ", err);
+        res.status(500).send("Erro interno no servidor");
+      });
   } catch (error) {
     console.error("Erro interno no serviodor ", error);
   }
