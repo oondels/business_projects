@@ -19,7 +19,8 @@
     "votacao": "nodemon src/votacao.js",
     "diesel": "nodemon src/dieselControl.js",
     "treinamentos": "nodemon src/treinamentos.js",
-    "cadastro": "nodemon src/register-user.js"
+    "cadastro": "nodemon src/register-user.js",
+    "reposicao-material": "nodemon src/reposicao-material.js"
   },
   "keywords": [
     "start"

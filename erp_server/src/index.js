@@ -87,6 +87,7 @@ app.post("/login", async (req, res) => {
         setor: dadosBanco.setor,
         nivel: dadosBanco.nivel,
         unidade: dadosBanco.unidade,
+        funcao: dadosBanco.funcao,
       },
       PRIVATE_KEY
     );

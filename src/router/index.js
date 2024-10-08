@@ -15,6 +15,7 @@ import Point from "../views/Point.vue";
 import Provisorio from "../views/Provisorio.vue";
 import Quimico from "../views/Quimico.vue";
 import Refeitorio from "../views/Refeitorio.vue";
+import ReposicaoMateriais from "../views/ReposicaoMateriais.vue";
 import Reserva from "../views/Reserva.vue";
 import TemposMetodos from "../views/TemposMetodos.vue";
 
@@ -194,6 +195,12 @@ const routes = [
     path: "/loja-dass",
     name: "Loja Dass",
     component: Loja,
+  },
+
+  {
+    path: "/reposicao-material",
+    name: "Reposicao Materiais",
+    component: ReposicaoMateriais,
   },
 
   {

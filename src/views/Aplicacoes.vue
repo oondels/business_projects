@@ -183,7 +183,7 @@
 
     <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
       <a
-        href="http://10.100.1.43:3000"
+        href="http://10.100.1.43/season"
         target="_blank"
         class="season"
         @mouseover.self="addHover"
