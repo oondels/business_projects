@@ -3,255 +3,359 @@
     <div class="solicitacoes">
       <h4 class="text-center">Solicitações Realizadas</h4>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Status</th>
-            <th>Modelo</th>
-            <th>Solicitante</th>
-            <th>Célula</th>
-            <th>Ordem</th>
-            <th>Pedido</th>
-            <th v-if="authActions()">Ação</th>
-          </tr>
-        </thead>
+      <div
+        class="table-container d-flex flex-column justify-content-center align-items-center"
+      >
+        <table>
+          <thead>
+            <tr>
+              <th class="small-col">Status</th>
+              <th>Modelo</th>
+              <th>Solicitante</th>
+              <th class="small-col">Célula</th>
+              <th>Ordem</th>
+              <th>Pedido</th>
+              <th class="small-col text-center" v-if="authActions()">Ação</th>
+              <th class="small-col" v-else></th>
+            </tr>
+          </thead>
 
-        <tbody>
-          <tr
-            v-for="solicitation in solicitations"
-            :key="solicitation.id"
-            :class="solicitation.iniciado ? 'start' : 'pending'"
-          >
-            <td v-if="solicitation.iniciado">Iniciado</td>
-            <td v-else>Não iniciado</td>
-            <td>{{ solicitation.modelo }}</td>
-            <td>{{ solicitation.solicitante }}</td>
-            <td>{{ solicitation.celula }}</td>
-            <td>{{ solicitation.ordem }}</td>
-            <td>{{ solicitation.pedido }}</td>
-            <td v-if="authActions()">
-              <v-dialog max-width="700">
-                <template v-slot:activator="{ props: activatorProps }">
-                  <i
-                    @click="teste"
-                    v-bind="activatorProps"
-                    role="button"
-                    class="material-icons"
-                  >
-                    info
-                  </i>
-                </template>
+          <tbody v-if="!loading">
+            <tr
+              v-for="solicitation in solicitations"
+              :key="solicitation.id"
+              :class="solicitationStatus(solicitation)"
+            >
+              <td>
+                <v-tooltip
+                  :text="solicitationStatus(solicitation, 'status').status"
+                >
+                  <template v-slot:activator="{ props }">
+                    <i
+                      v-bind="props"
+                      role="button"
+                      :class="[
+                        'material-icons',
+                        solicitationStatus(solicitation),
+                      ]"
+                    >
+                      {{ solicitationStatus(solicitation, "status").icon }}
+                    </i>
+                  </template>
+                </v-tooltip>
+              </td>
+              <td>{{ solicitation.modelo }}</td>
+              <td>{{ solicitation.solicitante }}</td>
+              <td>{{ solicitation.celula }}</td>
+              <td>{{ solicitation.ordem }}</td>
+              <td>{{ solicitation.pedido }}</td>
+              <td
+                class="small-col text-center"
+                v-if="authActions() && !solicitation.finalizado"
+              >
+                <v-dialog max-width="700">
+                  <template v-slot:activator="{ props: activatorProps }">
+                    <i
+                      @click="teste"
+                      v-bind="activatorProps"
+                      role="button"
+                      class="material-icons text-center"
+                    >
+                      open_in_new
+                    </i>
+                  </template>
 
-                <template v-slot:default="{ isActive }">
-                  <v-card
-                    :title="'Solicitação de peças para ' + solicitation.modelo"
-                  >
-                    <v-card-text>
-                      <div class="title-reposicao">
-                        <h5 class="text-center">
-                          Requisição feita por
-                          <strong>{{ solicitation.solicitante }}</strong>
-                        </h5>
-                      </div>
+                  <template v-slot:default="{ isActive }">
+                    <v-card
+                      :title="
+                        'Solicitação de peças para ' + solicitation.modelo
+                      "
+                    >
+                      <v-card-text>
+                        <div class="title-reposicao">
+                          <h5 class="text-center">
+                            Requisição feita por
+                            <strong>{{ solicitation.solicitante }}</strong>
+                          </h5>
+                        </div>
 
-                      <div class="ordem-pedido">
-                        <span>
-                          Ordem: <strong>{{ solicitation.ordem }}</strong>
-                        </span>
-                        <span>
-                          Pedido: <strong>{{ solicitation.pedido }}</strong>
-                        </span>
-                      </div>
+                        <div
+                          :class="[
+                            'status text-center ordem-pedido mb-2',
+                            solicitationStatus(solicitation),
+                          ]"
+                        >
+                          Status da Solicitação:
+                          <strong>
+                            {{
+                              solicitationStatus(solicitation, "status").status
+                            }}
+                          </strong>
 
-                      <div class="reposition-info">
-                        <div class="info-column right">
-                          <div class="info-item">
-                            <strong>Data Solicitação: </strong>
-                            <span>
-                              {{ formatteDate(solicitation.data_solicitacao) }}
-                            </span>
+                          <i class="material-symbols-outlined">
+                            {{
+                              solicitationStatus(solicitation, "status").icon
+                            }}
+                          </i>
+                        </div>
+
+                        <div class="ordem-pedido">
+                          <span>
+                            Ordem: <strong>{{ solicitation.ordem }}</strong>
+                          </span>
+                          <span>
+                            Pedido: <strong>{{ solicitation.pedido }}</strong>
+                          </span>
+                        </div>
+
+                        <div class="reposition-info">
+                          <div class="info-column right">
+                            <div class="info-item">
+                              <strong>Data Solicitação: </strong>
+                              <span>
+                                {{
+                                  formatteDate(solicitation.data_solicitacao)
+                                }}
+                              </span>
+                            </div>
+
+                            <div class="info-item">
+                              <strong>Data Embarque: </strong>
+                              <span>
+                                {{ formatteDate(solicitation.data_embarque) }}
+                              </span>
+                            </div>
+
+                            <div class="info-item">
+                              <strong>Célula: </strong>
+                              <span>{{ solicitation.celula }}</span>
+                            </div>
                           </div>
 
-                          <div class="info-item">
-                            <strong>Data Embarque: </strong>
-                            <span>
-                              {{ formatteDate(solicitation.data_embarque) }}
-                            </span>
-                          </div>
+                          <div class="info-column">
+                            <div class="info-item">
+                              <strong>Motivo: </strong>
+                              <span>{{ solicitation.motivo }}</span>
+                            </div>
+                            <div class="info-item">
+                              <v-dialog max-width="600">
+                                <template
+                                  v-slot:activator="{ props: activatorProps }"
+                                >
+                                  <button v-bind="activatorProps">
+                                    Ver Peças
+                                  </button>
+                                </template>
 
-                          <div class="info-item">
-                            <strong>Célula: </strong>
-                            <span>{{ solicitation.celula }}</span>
+                                <template v-slot:default="{ isActive }">
+                                  <v-card title="Peças Solicitadas">
+                                    <v-card-text>
+                                      <div class="lista-pecas">
+                                        <ul>
+                                          <li
+                                            v-for="peca in solicitation.pecas"
+                                            :key="peca.id"
+                                          >
+                                            {{ peca.nome }} -
+                                            <span class="peca-info">
+                                              Quantidade:
+                                              {{ peca.quantidade }} | Tamanho:
+                                              {{ peca.tamanho }}
+                                            </span>
+                                          </li>
+                                        </ul>
+                                      </div>
+                                    </v-card-text>
+
+                                    <v-card-actions>
+                                      <v-spacer></v-spacer>
+
+                                      <v-btn
+                                        text="Fechar"
+                                        @click="isActive.value = false"
+                                      ></v-btn>
+                                    </v-card-actions>
+                                  </v-card>
+                                </template>
+                              </v-dialog>
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <h5
+                            class="text-center"
+                            v-if="
+                              solicitation.aprovacao_inspetor_qualidade ||
+                              solicitation.aprovacao_gerente_industrial ||
+                              solicitation.aprovacao_gerente ||
+                              solicitation.aprovacao_gerente_marca
+                            "
+                          >
+                            Solicitações Aprovadas
+                          </h5>
+                          <h5 class="text-center" v-else>
+                            Sem Solicitações Aprovadas
+                          </h5>
+
+                          <div class="approved-list">
+                            <span
+                              v-if="solicitation.aprovacao_gerente_industrial"
+                            >
+                              Gerente Industrial:
+                              <i class="material-symbols-outlined">
+                                task_alt
+                              </i>
+                            </span>
+                            <span v-if="solicitation.aprovacao_gerente_marca">
+                              Gerente Marca:
+                              <i class="material-symbols-outlined">
+                                task_alt
+                              </i>
+                            </span>
+                            <span v-if="solicitation.aprovacao_gerente">
+                              Gerente:
+                              <i class="material-symbols-outlined">
+                                task_alt
+                              </i>
+                            </span>
+                            <span
+                              v-if="solicitation.aprovacao_inspetor_qualidade"
+                            >
+                              Inspetor Qualidade:
+                              <i class="material-symbols-outlined">
+                                task_alt
+                              </i>
+                            </span>
                           </div>
                         </div>
 
-                        <div class="info-column">
-                          <div class="info-item">
-                            <strong>Motivo: </strong>
-                            <span>{{ solicitation.motivo }}</span>
-                          </div>
-                          <div class="info-item">
-                            <v-dialog max-width="600">
-                              <template
-                                v-slot:activator="{ props: activatorProps }"
-                              >
-                                <button v-bind="activatorProps">
-                                  Ver Peças
-                                </button>
-                              </template>
+                        <div
+                          class="reposition-actions d-flex flex-row align-items-center justify-content-center"
+                        >
+                          <span
+                            class="d-flex flex-row align-items-center checkbox-item"
+                            v-if="
+                              (decodeJwt().funcao === 'GERENTE' ||
+                                decodeJwt().funcao === 'AUTOMACAO') &&
+                              !solicitation.aprovacao_gerente &&
+                              solicitation.motivo !== 'Falta Material'
+                            "
+                          >
+                            Gerente:
+                            <v-checkbox
+                              value="true"
+                              v-model="managerEvaluation"
+                              color="success"
+                            />
+                          </span>
 
-                              <template v-slot:default="{ isActive }">
-                                <v-card title="Peças Solicitadas">
-                                  <v-card-text>
-                                    <div class="lista-pecas">
-                                      <ul>
-                                        <li
-                                          v-for="peca in solicitation.pecas"
-                                          :key="peca.id"
-                                        >
-                                          {{ peca.nome }} -
-                                          <span class="peca-info">
-                                            Quantidade: {{ peca.quantidade }} |
-                                            Tamanho: {{ peca.tamanho }}cm
-                                          </span>
-                                        </li>
-                                      </ul>
-                                    </div>
-                                  </v-card-text>
+                          <span
+                            class="d-flex flex-row align-items-center checkbox-item"
+                            v-if="
+                              (decodeJwt().funcao === 'GERENTE' ||
+                                decodeJwt().funcao === 'AUTOMACAO') &&
+                              !solicitation.aprovacao_gerente_marca &&
+                              solicitation.motivo !== 'Falta Material'
+                            "
+                          >
+                            Gerente de Marca:
+                            <v-checkbox
+                              value="true"
+                              color="success"
+                              v-model="brachManagerEvaluation"
+                            />
+                          </span>
 
-                                  <v-card-actions>
-                                    <v-spacer></v-spacer>
+                          <span
+                            class="d-flex flex-row align-items-center checkbox-item"
+                            v-if="
+                              (decodeJwt().funcao === 'INSPETOR DE QUALIDADE' ||
+                                decodeJwt().funcao === 'AUTOMACAO') &&
+                              !solicitation.aprovacao_inspetor_qualidade &&
+                              solicitation.defeito_material === true &&
+                              solicitation.motivo !== 'Falta Material'
+                            "
+                          >
+                            Inspetor(a) Qualidade:
+                            <v-checkbox
+                              value="true"
+                              color="success"
+                              v-model="inspectorEvaluation"
+                            />
+                          </span>
 
-                                    <v-btn
-                                      text="Fechar"
-                                      @click="isActive.value = false"
-                                    ></v-btn>
-                                  </v-card-actions>
-                                </v-card>
-                              </template>
-                            </v-dialog>
-                          </div>
+                          <span
+                            class="d-flex flex-row align-items-center checkbox-item"
+                            v-if="
+                              (decodeJwt().funcao === 'GERENTE INDUSTRIAL' ||
+                                decodeJwt().funcao === 'AUTOMACAO') &&
+                              !solicitation.aprovacao_gerente_industrial &&
+                              solicitation.motivo === 'Falta Material'
+                            "
+                          >
+                            Gerente Industrial:
+                            <v-checkbox
+                              value="true"
+                              color="success"
+                              v-model="industrialManagerEvaluation"
+                            />
+                          </span>
                         </div>
-                      </div>
+                      </v-card-text>
 
-                      <div
-                        class="reposition-actions d-flex flex-row align-items-center justify-content-center"
-                      >
-                        <span
-                          class="d-flex flex-row align-items-center checkbox-item"
-                          v-if="
-                            (decodeJwt().funcao === 'GERENTE' ||
-                              decodeJwt().funcao === 'AUTOMACAO') &&
-                            !solicitation.aprovacao_gerente &&
-                            !solicitation.falta_material
-                          "
-                        >
-                          Gerente:
-                          <v-checkbox
-                            value="true"
-                            v-model="managerEvaluation"
-                            color="success"
-                          />
-                        </span>
+                      <v-card-actions>
+                        <v-spacer></v-spacer>
 
-                        <span
-                          class="d-flex flex-row align-items-center checkbox-item"
-                          v-if="
-                            (decodeJwt().funcao === 'GERENTE' ||
-                              decodeJwt().funcao === 'AUTOMACAO') &&
-                            !solicitation.aprovacao_gerente_marca &&
-                            !solicitation.falta_material
-                          "
-                        >
-                          Gerente de Marca:
-                          <v-checkbox
-                            value="true"
-                            color="success"
-                            v-model="brachManagerEvaluation"
-                          />
-                        </span>
+                        <v-btn
+                          v-if="showButtonEvaluation(solicitation)"
+                          text="Salvar Avaliação"
+                          color="success"
+                          variant="outlined"
+                          @click="postEvaluation(solicitation)"
+                        ></v-btn>
 
-                        <span
-                          class="d-flex flex-row align-items-center checkbox-item"
-                          v-if="
-                            (decodeJwt().funcao === 'INSPETOR DE QUALIDADE' ||
-                              decodeJwt().funcao === 'AUTOMACAO') &&
-                            !solicitation.aprovacao_inspetor_qualidade &&
-                            solicitation.defeito_material === true &&
-                            !solicitation.falta_material
-                          "
-                        >
-                          Inspetor(a) Qualidade:
-                          <v-checkbox
-                            value="true"
-                            color="success"
-                            v-model="inspectorEvaluation"
-                          />
-                        </span>
-
-                        <span
-                          class="d-flex flex-row align-items-center checkbox-item"
-                          v-if="
-                            (decodeJwt().funcao === 'GERENTE INDUSTRIAL' ||
-                              decodeJwt().funcao === 'AUTOMACAO') &&
-                            solicitation.falta_material
-                          "
-                        >
-                          Gerente Industrial:
-                          <v-checkbox
-                            value="true"
-                            color="success"
-                            v-model="inspectorEvaluation"
-                          />
-                        </span>
-                      </div>
-                    </v-card-text>
-
-                    <v-card-actions>
-                      <v-spacer></v-spacer>
-
-                      <v-btn
-                        text="Salvar Avaliação"
-                        color="success"
-                        variant="outlined"
-                        @click="postEvaluation(solicitation)"
-                      ></v-btn>
-
-                      <v-btn
-                        text="Fechar"
-                        color="danger"
-                        variant="outlined"
-                        @click="isActive.value = false"
-                      ></v-btn>
-                    </v-card-actions>
-                  </v-card>
-                </template>
-              </v-dialog>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                        <v-btn
+                          text="Fechar"
+                          color="danger"
+                          variant="outlined"
+                          @click="isActive.value = false"
+                        ></v-btn>
+                      </v-card-actions>
+                    </v-card>
+                  </template>
+                </v-dialog>
+              </td>
+              <td v-else></td>
+            </tr>
+          </tbody>
+        </table>
+        <LoadingComponent v-if="loading" size="150" width="15" />
+      </div>
     </div>
   </div>
+  <alert ref="alert" />
 </template>
 
 <script>
 import axios from "axios";
 import VueJwtDecode from "vue-jwt-decode";
 import ip from "../../../ip";
+import Alert from "../Alert.vue";
+import LoadingComponent from "../LoadingComponent.vue";
 
 export default {
   name: "SolicitacoesReposicao",
-  components: {},
+  components: { Alert, LoadingComponent },
 
   data() {
     return {
       solicitations: [],
-
+      loading: true,
       evaluetedSolicitation: null,
       managerEvaluation: "false",
       brachManagerEvaluation: "false",
       inspectorEvaluation: "false",
+      industrialManagerEvaluation: "false",
     };
   },
 
@@ -283,8 +387,30 @@ export default {
       return false;
     },
 
-    teste() {
-      console.log(this.decodeJwt().funcao);
+    solicitationStatus(solicitation, action) {
+      if (solicitation.finalizado)
+        return action ? { status: "Concluído", icon: "done_all" } : "finished";
+      if (solicitation.estoque)
+        return action
+          ? { status: "Abastecimento Estoque", icon: "store" }
+          : "stock";
+
+      if (
+        (solicitation.aprovacao_gerente &&
+          solicitation.aprovacao_gerente_marca) ||
+        (solicitation.aprovacao_gerente &&
+          solicitation.aprovacao_gerente_marca &&
+          solicitation.aprovacao_inspetor_qualidade) ||
+        solicitation.aprovacao_gerente_industrial
+      ) {
+        return action
+          ? { status: "Aguardando Liberação Consumo", icon: "pending_actions" }
+          : "approved";
+      }
+
+      return action
+        ? { status: "Pendente de Aprovação", icon: "hourglass_empty" }
+        : "pendingg";
     },
 
     formatteDate(dateFormate) {
@@ -310,6 +436,7 @@ export default {
         })
         .then((response) => {
           this.solicitations = response.data;
+          this.loading = false;
           console.log(this.solicitations);
         })
         .catch((error) => {
@@ -317,36 +444,88 @@ export default {
         });
     },
 
-    postEvaluation() {
-      console.log(this.managerEvaluation);
-      // if (this.decodeJwt()) {
-      //   const role = this.decodeJwt().funcao;
-      //   const roleEvaluation = {
-      //     // Alterar depois para GERENTE
-      //     AUTOMACAO: this.managerEvaluation,
-      //     "GERENTE MARCA": this.brachManagerEvaluation,
-      //     "INSPETOR DE QUALIDADE": this.inspectorEvaluation,
-      //   };
+    showButtonEvaluation(solicitation) {
+      if (
+        (solicitation.aprovacao_gerente === "true" &&
+          solicitation.aprovacao_gerente_marca === "true") ||
+        (solicitation.aprovacao_gerente === "true" &&
+          solicitation.aprovacao_gerente_marca === "true" &&
+          solicitation.aprovacao_inspetor_qualidade === "true") ||
+        solicitation.aprovacao_gerente_industrial === "true"
+      ) {
+        return false;
+      }
+      return true;
+    },
 
-      //   axios
-      //     .post(`http://${ip}:3023/post-evaluation`, {
-      //       evaluation: roleEvaluation[role],
-      //       role: role,
-      //       id: solicitation.id,
-      //     })
-      //     .then((response) => {
-      //       console.log(response.data);
-      //     })
-      //     .catch((error) => {
-      //       console.error("Erro ao salvar avaliação: ", error);
-      //     });
-      // }
+    postEvaluation(solicitation) {
+      console.log(this.industrialManagerEvaluation);
+      if (this.decodeJwt()) {
+        const role = this.decodeJwt().funcao;
+        const roleEvaluation = {
+          // Alterar depois para GERENTE
+          GERENTE: {
+            evaluation: this.managerEvaluation,
+            role: "aprovacao_gerente",
+          },
+          AUTOMACAO: {
+            evaluation: this.brachManagerEvaluation,
+            role: "aprovacao_gerente_marca",
+          },
+          "INSPETOR DE QUALIDADE": {
+            evaluation: this.inspectorEvaluation,
+            role: "aprovacao_inspetor_qualidade",
+          },
+          "GERENTE INDUSTRIAL": {
+            evaluation: this.industrialManagerEvaluation,
+            role: "aprovacao_gerente_industrial",
+          },
+        };
+
+        axios
+          .post(`http://${ip}:3023/post-evaluation`, {
+            evaluation: roleEvaluation[role],
+            role: role,
+            id: solicitation.id,
+            unidade: this.decodeJwt().unidade,
+          })
+          .then((response) => {
+            this.$refs.alert.mostrarAlerta(
+              "success",
+              "done_outlined",
+              "Sucesso",
+              response.data
+            );
+
+            setTimeout(() => {
+              window.location.reload();
+            }, 1500);
+          })
+          .catch((error) => {
+            console.error("Erro ao salvar avaliação: ", error);
+            return this.$refs.alert.mostrarAlerta(
+              "warning",
+              "warning",
+              "Error",
+              error.response.data
+            );
+          });
+      }
     },
   },
 };
 </script>
 
 <style scoped>
+.table-container {
+  max-height: 600px;
+  overflow-y: auto;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 10px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -357,11 +536,10 @@ table {
   background-color: #f9f9f9;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 table thead {
-  background-color: #007bff;
+  background-color: #000000;
   color: white;
 }
 
@@ -401,6 +579,48 @@ table tr.start {
   background-color: #c3eecd;
 }
 
+table .small-col {
+  width: 100px !important;
+}
+
+.small-col i {
+  color: #419b64;
+  transition:
+    transform 0.3s ease,
+    color 0.3s ease;
+  transform-origin: center;
+  background-color: #ecf8f2;
+  padding: 8px;
+  border-radius: 50%;
+}
+
+.small-col i:hover {
+  transform: scale(1.1);
+  color: #35a853;
+}
+
+.pendingg {
+  background-color: #fff3cd !important; /* amarelo claro */
+  color: #856404 !important;
+}
+
+.approved {
+  background-color: #ffffff !important; /* verde claro */
+  color: #419b64 !important;
+}
+
+.stock {
+  background-color: #cce5ff !important; /* azul claro */
+  color: #004085 !important;
+}
+
+.finished {
+  background-color: #ddf8d7 !important; /* vermelho claro */
+  color: #009e25 !important;
+}
+
+.status 
+
 /* Lista de Peças */
 ul {
   list-style: none;
@@ -433,10 +653,28 @@ li:last-child {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  background-color: #f9f9f9;
+  background-color: #f3f0f0;
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.approved-list {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.approved-list span {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+.approved-list i {
+  color: #009e25;
 }
 
 .reposition-info {

@@ -83,7 +83,7 @@ app.get("/get-managers", async (req, res) => {
   }
 });
 
-app.get("/get-quality-inspectors-coordinators", async (req, res) => {
+app.get("/get-coordinators", async (req, res) => {
   try {
     const unidade = req.query.unidade;
 
@@ -95,14 +95,10 @@ app.get("/get-quality-inspectors-coordinators", async (req, res) => {
       queryBase += `_${unidade.toLowerCase()}`;
     }
 
-    let queryInspectors = `${queryBase} WHERE funcao = 'INSPETOR DE QUALIDADE' ORDER BY nome ASC`;
     let queryCoordinators = `${queryBase} WHERE funcao ILIKE '%COORDENADOR%' ORDER BY nome ASC`;
-
-    const qualityInspectors = await pool.query(queryInspectors);
     const coordinators = await pool.query(queryCoordinators);
 
     res.status(200).json({
-      quality: qualityInspectors.rows,
       coordinator: coordinators.rows,
     });
   } catch (error) {
@@ -178,20 +174,43 @@ app.get("/get-solicitations", async (req, res) => {
   }
 });
 
+app.get("/get-user-stock-name", async (req, res) => {
+  const registration = req.query.registration;
+
+  if (isNaN(parseFloat(registration))) {
+    return res.status(500).send("Matrícula Inválida");
+  }
+
+  const userName = await pool.query(
+    `
+      SELECT nome  from colaborador.lista_funcionario
+      WHERE matricula = $1
+    `,
+    [registration]
+  );
+
+  if (userName.rows.length === 0) {
+    return res
+      .status(404)
+      .send("Colaborador Não Encontrado. Verifique a Matrícula.");
+  }
+
+  return res.status(200).send(userName.rows[0].nome);
+});
+
 app.post("/post-solicitation", async (req, res) => {
   try {
     const { data, unidade } = req.body;
-
     const post = await pool.query(
       `
       INSERT INTO reposicao_pecas.solicitacoes
       (modelo_id, solicitante, solicitante_matricula, data_solicitacao,
       data_embarque, celula, turno, pedido, ordem, motivo, cod_motivo_pedido,
       gerente_marca, gerente_marca_matricula, gerente, gerente_matricula,
-      inspetor_qualidade, inspetor_qualidade_matricula, coordenador, coordenador_matricula,
-      unidade_dass, pecas, falta_material, modelo, defeito_material)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 
-      $18, $19, $20, $21, $22, $23, $24)
+      coordenador, coordenador_matricula,
+      unidade_dass, pecas, modelo, defeito_material)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
+      $18, $19, $20, $21)
       RETURNING *
     `,
       [
@@ -204,19 +223,16 @@ app.post("/post-solicitation", async (req, res) => {
         data.turno,
         data.request,
         data.order,
-        data.reason.name,
+        data.reason.nome,
         data.reason.cod,
         data.evaluators.branchManager.nome,
         data.evaluators.branchManager.matricula,
         data.evaluators.manager.nome,
         data.evaluators.manager.matricula,
-        data.evaluators.qualityInspector.nome,
-        data.evaluators.qualityInspector.matricula,
         data.evaluators.coordinator.nome,
         data.evaluators.coordinator.matricula,
         unidade,
         JSON.stringify(data.pecas),
-        data.faltaMaterial,
         data.model.nome,
         data.defeitoMaterial,
       ]
@@ -235,24 +251,15 @@ app.post("/post-solicitation", async (req, res) => {
 
 app.post("/post-evaluation", async (req, res) => {
   try {
-    const { evaluation, role, id } = req.body;
-
-    const roleEvaluation = {
-      // Alterar depois para GERENTE
-      AUTOMACAO: "aprovacao_gerente",
-      "GERENTE MARCA": "aprovacao_gerente_marca",
-      "INSPETOR DE QUALIDADE": "aprovacao_inspetor_qualidade",
-    };
+    const { evaluation, id, unidade } = req.body;
 
     let query = `UPDATE reposicao_pecas.solicitacoes SET `;
-    query += `${roleEvaluation[role]} = $1 WHERE id = $2 RETURNING *`;
+    query += `${evaluation.role} = $1 WHERE id = $2 AND unidade_dass = $3 RETURNING *`;
 
-    const post = await pool.query(query, [evaluation, id]);
-
+    const post = await pool.query(query, [evaluation.evaluation, id, unidade]);
     if (post.rows.length === 0) {
       return res.status(400).send("Erro ao Atualizar Avaliação.");
     }
-
     return res.status(200).send("Avaliação Registrada com Sucesso!");
   } catch (error) {
     console.error(error);
@@ -260,25 +267,43 @@ app.post("/post-evaluation", async (req, res) => {
   }
 });
 
-app.put("/start-solicitation", async (req, res) => {
+app.put("/update-solicitation", async (req, res) => {
   try {
-    const { solicitationId } = req.body;
+    const { solicitationId, user, action, userStockRegistration, unidade } =
+      req.body;
+    let query = `UPDATE reposicao_pecas.solicitacoes `;
+    let params = [];
 
-    const query = await pool.query(
-      `
-      UPDATE reposicao_pecas.solicitacoes
-      SET iniciado = true, start_date = NOW()
-      WHERE id = $1
-      RETURNING *
-    `,
-      [solicitationId]
-    );
+    if (action === "consumption") {
+      query += `SET estoque = true, start_date = NOW(), operador_consumo_inicio = $${
+        params.length + 1
+      }`;
+      params.push(user);
+    }
+    if (action === "start") {
+      query += `SET estoque_start = NOW(), matricula_user_estoque = $${
+        params.length + 1
+      }, operador_estoque = 'ESTOQUE.ABASTECIMENTO', iniciado = true`;
+      params.push(userStockRegistration);
+    }
+    if (action === "stop") {
+      query += `SET estoque_end = NOW(), finalizado = true`;
+    }
 
-    if (query.rows.length === 0) {
+    query += ` WHERE id = $${params.length + 1} `;
+    params.push(solicitationId);
+
+    if (action === "stop" || action === "start") query += `AND estoque = true `;
+
+    query += `AND unidade_dass = $${params.length + 1} RETURNING *`;
+    params.push(unidade);
+
+    const update = await pool.query(query, params);
+    if (update.rows.length === 0) {
       return res.status(400).send("Erro ao Iniciar Solicitação!");
     }
 
-    return res.status(200).send("Solicitação Iniciada!");
+    return res.status(200).send("Solicitação Atualizada!");
   } catch (error) {
     console.error(error);
     res.status(500).send("Erro interno no servidor");

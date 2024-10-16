@@ -14,8 +14,8 @@
       <ApexCharts
         type="line"
         height="370"
-        :options="chartOptions"
-        :series="chartSeries"
+        :options="chartData.chartOptions"
+        :series="chartData.chartSeries"
       />
     </div>
   </div>

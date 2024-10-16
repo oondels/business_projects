@@ -92,19 +92,7 @@
               <div class="pecas-selecionadas">
                 <h5 class="text-center">Peças</h5>
 
-                <div>
-                  <span
-                    class="d-flex flex-row align-items-center justify-content-center custom-checkbox"
-                  >
-                    <p>Falta de Material</p>
-                    <input
-                      type="checkbox"
-                      v-model="solicitation.faltaMaterial"
-                    />
-                  </span>
-                </div>
-
-                <div v-if="!solicitation.faltaMaterial" class="pecas-info">
+                <div class="pecas-info">
                   <div
                     class="peca-defeito d-flex flex-row align-items-center custom-checkbox"
                   >
@@ -179,14 +167,6 @@
 
                 <div class="col-6">
                   <v-combobox
-                    :items="qualityInspectors"
-                    item-title="nome"
-                    item-value="matricula"
-                    v-model="solicitation.evaluators.qualityInspector"
-                    label="Inspetor Qualidade"
-                  />
-
-                  <v-combobox
                     :items="coordinators"
                     item-title="nome"
                     item-value="matricula"
@@ -224,7 +204,7 @@
               <div
                 class="d-flex flex-column justify-content-center align-items-center mt-5"
               >
-                <v-btn @click="teste" color="success" variant="flat">
+                <v-btn @click="postSolicitatio" color="success" variant="flat">
                   Solicitar Material
                 </v-btn>
               </div>
@@ -245,11 +225,14 @@
       </v-card>
     </template>
   </v-dialog>
+  <alert ref="alert" />
 </template>
 
 <script>
 import axios from "axios";
+import VueJwtDecode from "vue-jwt-decode";
 import ip from "../../../ip";
+import Alert from "../Alert.vue";
 
 export default {
   name: "RelatorioReposicao",
@@ -263,14 +246,13 @@ export default {
     },
   },
 
-  components: {},
+  components: { Alert },
 
   data() {
     return {
       aviamento: false,
 
       solicitation: {
-        faltaMaterial: false,
         defeitoMaterial: false,
         materiaisNaoDisponiveis: [],
         model: this.model,
@@ -287,7 +269,6 @@ export default {
         evaluators: {
           branchManager: null,
           manager: null,
-          qualityInspector: null,
           coordinator: null,
         },
         wareHouse: [],
@@ -295,7 +276,6 @@ export default {
 
       branchManagers: [],
       managers: [],
-      qualityInspectors: [],
       coordinators: [],
       wareHouseItems: [],
       reason: [],
@@ -314,16 +294,49 @@ export default {
       console.log(this.solicitation);
     },
 
+    decodeJwt() {
+      let token = sessionStorage.getItem("token");
+      if (token) {
+        return VueJwtDecode.decode(token);
+      }
+    },
+
     postSolicitatio() {
+      this.solicitation.pecas = this.pecas;
+
+      if (!this.decodeJwt()) {
+        return this.$refs.alert.mostrarAlerta(
+          "warning",
+          "warning",
+          "Erro",
+          "Você Precisa Fazer Login Para Prosseguir"
+        );
+      }
+
       axios
         .post(`http://${ip}:3023/post-solicitation`, {
           data: this.solicitation,
-          unidade: "SEST",
+          unidade: this.decodeJwt().unidade,
         })
         .then((response) => {
-          console.log(response.data);
+          this.$refs.alert.mostrarAlerta(
+            "success",
+            "done_outlined",
+            "Sucesso",
+            response.data
+          );
+
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
         })
         .catch((error) => {
+          this.$refs.alert.mostrarAlerta(
+            "warning",
+            "warning",
+            "Erro",
+            error.response.data
+          );
           console.error(`Erro ao solicitar reposição: ${error}`);
         });
     },
@@ -361,13 +374,12 @@ export default {
 
     getQualityInspector() {
       axios
-        .get(`http://${ip}:3023/get-quality-inspectors-coordinators`, {
+        .get(`http://${ip}:3023/get-coordinators`, {
           params: {
             unidade: "SEST",
           },
         })
         .then((response) => {
-          this.qualityInspectors = response.data.quality;
           this.coordinators = response.data.coordinator;
         })
         .catch((error) => {
