@@ -4,7 +4,7 @@
   </div>
 
   <div class="mb-4 row col-12">
-    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
+    <div class="col-4 mb-4 aplication-card">
       <a
         class="ambulatorio"
         @mouseover.self="addHover"
@@ -18,7 +18,7 @@
       </a>
     </div>
 
-    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
+    <div class="col-4 mb-4 aplication-card">
       <router-link
         class="ferramentas-lean"
         @mouseover.self="addHover"
@@ -32,10 +32,7 @@
       </router-link>
     </div>
 
-    <div
-      class="col-4 mb-4 aplication-card"
-      v-if="construcao() && permissionSestApps"
-    >
+    <div class="col-4 mb-4 aplication-card" v-if="construcao()">
       <router-link
         class="baixaProduto"
         @mouseover.self="addHover"
@@ -50,7 +47,7 @@
       </router-link>
     </div>
 
-    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
+    <div class="col-4 mb-4 aplication-card">
       <a
         class="gerenciamento"
         @mouseover.self="addHover"
@@ -65,7 +62,7 @@
       </a>
     </div>
 
-    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
+    <div class="col-4 mb-4 aplication-card">
       <router-link
         to="/pcp"
         class="pcp"
@@ -79,7 +76,7 @@
       </router-link>
     </div>
 
-    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
+    <div class="col-4 mb-4 aplication-card">
       <a
         href="http://10.100.1.43/pe_confirmado/"
         class="pe_confirmado"
@@ -93,7 +90,7 @@
       </a>
     </div>
 
-    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
+    <div class="col-4 mb-4 aplication-card">
       <router-link
         to="/manutencao"
         class="manutencao"
@@ -107,7 +104,7 @@
       </router-link>
     </div>
 
-    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
+    <div class="col-4 mb-4 aplication-card">
       <a
         href="http://10.100.1.43/pense&aja-sest/"
         class="penseAja"
@@ -121,7 +118,7 @@
       </a>
     </div>
 
-    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
+    <div class="col-4 mb-4 aplication-card">
       <a
         href="http://192.168.26.90/producao"
         target="_blank"
@@ -136,7 +133,7 @@
       </a>
     </div>
 
-    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
+    <div class="col-4 mb-4 aplication-card">
       <router-link
         to="/quimico"
         class="quimico"
@@ -150,10 +147,7 @@
       </router-link>
     </div>
 
-    <div
-      class="col-4 mb-4 aplication-card"
-      v-if="permissaoDP() && permissionSestApps"
-    >
+    <div class="col-4 mb-4 aplication-card" v-if="permissaoDP()">
       <router-link
         to="/departamento-pessoal"
         class="departamento-pessoal"
@@ -181,7 +175,7 @@
       </router-link>
     </div>
 
-    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
+    <div class="col-4 mb-4 aplication-card">
       <a
         href="http://10.100.1.43:3000"
         target="_blank"
@@ -196,7 +190,7 @@
       </a>
     </div>
 
-    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
+    <div class="col-4 mb-4 aplication-card">
       <router-link
         to="/sorteio"
         class="sorteio"
@@ -210,7 +204,7 @@
       </router-link>
     </div>
 
-    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
+    <div class="col-4 mb-4 aplication-card">
       <router-link
         to="/tempos&metodos"
         class="tempos-metodos"
@@ -224,7 +218,7 @@
       </router-link>
     </div>
 
-    <div v-if="permissionSestApps" class="col-4 mb-4 aplication-card">
+    <div class="col-4 mb-4 aplication-card">
       <router-link
         to="/treinamentos"
         class="treinamentos"
@@ -241,7 +235,7 @@
 
   <hr />
 
-  <div v-if="permissionSestApps" class="dashboards">
+  <div class="dashboards">
     <div class="title-aplicacoes">
       <h6 class="mb-4">Dashboards</h6>
     </div>
@@ -270,9 +264,9 @@ import sorteioImg from "../../public/img/aplicacoes/sorteio.png";
 import temposMetodosImg from "../../public/img/aplicacoes/temposemetodos.png";
 import treinamentosImg from "../../public/img/aplicacoes/treinamentos.png";
 
-import axios from "axios";
+// import axios from "axios";
 import VueJwtDecode from "vue-jwt-decode";
-import ip from "../ip";
+// import ip from "../ip";
 import ListaGenerica from "./components/ListaGenerica.vue";
 
 export default {
@@ -284,7 +278,6 @@ export default {
   mounted() {
     this.permissaoDP();
     this.permissaoPcp();
-    this.sestPermission();
   },
 
   methods: {
@@ -315,18 +308,18 @@ export default {
       }
     },
 
-    sestPermission() {
-      axios
-        .get(`http://${ip}:3041/sest-permission`)
-        .then((response) => {
-          this.permissionSestApps = response.data;
+    // sestPermission() {
+    //   axios
+    //     .get(`http://${ip}:3041/sest-permission`)
+    //     .then((response) => {
+    //       this.permissionSestApps = response.data;
 
-          console.log(this.permissionSestApps);
-        })
-        .catch((error) => {
-          console.error(error);
-        });
-    },
+    //       console.log(this.permissionSestApps);
+    //     })
+    //     .catch((error) => {
+    //       console.error(error);
+    //     });
+    // },
 
     unidadeSest() {
       if (!this.decodeJwt()) {
@@ -399,8 +392,6 @@ export default {
     return {
       onHover: false,
       currentPenseAjaImage: penseajaImg,
-
-      permissionSestApps: false,
 
       ambulatorioImg: ambulatorioImg,
       baixaProdutoImg: baixaProdutoImg,
