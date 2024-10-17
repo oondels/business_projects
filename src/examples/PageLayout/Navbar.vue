@@ -1,14 +1,27 @@
 <template>
   <!-- Navbar -->
-  <nav class="top-0 navbar navbar-expand-lg position-absolute z-index-3"
-    :class="isBlur ? isBlur : 'shadow-none my-2 navbar-transparent w-100'">
+  <nav
+    class="top-0 navbar navbar-expand-lg position-absolute z-index-3"
+    :class="isBlur ? isBlur : 'shadow-none my-2 navbar-transparent w-100'"
+  >
     <div class="container px-0">
-      <router-link class="navbar-brand font-weight-bolder ms-lg-0 ms-3" to="/inicio" v-bind="$attrs"
-        :class="isBlur ? 'text-dark' : 'text-white'">
+      <router-link
+        class="navbar-brand font-weight-bolder ms-lg-0 ms-3"
+        to="/inicio"
+        v-bind="$attrs"
+        :class="isBlur ? 'text-dark' : 'text-white'"
+      >
         Unix
       </router-link>
-      <button class="navbar-toggler shadow-none ms-2" type="button" data-bs-toggle="collapse"
-        data-bs-target="#navigation" aria-controls="navigation" aria-expanded="false" aria-label="Toggle navigation">
+      <button
+        class="navbar-toggler shadow-none ms-2"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navigation"
+        aria-controls="navigation"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
         <span class="navbar-toggler-icon mt-2">
           <span class="navbar-toggler-bar bar1"></span>
           <span class="navbar-toggler-bar bar2"></span>
@@ -18,22 +31,36 @@
       <div class="collapse navbar-collapse" id="navigation">
         <ul class="navbar-nav mx-auto">
           <li class="nav-item">
-            <router-link class="nav-link d-flex align-items-center me-2 active" aria-current="page" to="/inicio">
-              <i class="fa fa-home opacity-6 me-1" aria-hidden="true"
-                :class="isBlur ? 'text-dark' : 'text-white'"></i>
+            <router-link
+              class="nav-link d-flex align-items-center me-2 active"
+              aria-current="page"
+              to="/inicio"
+            >
+              <i
+                class="fa fa-home opacity-6 me-1"
+                aria-hidden="true"
+                :class="isBlur ? 'text-dark' : 'text-white'"
+              ></i>
               Início
             </router-link>
           </li>
           <li class="nav-item">
             <router-link class="nav-link me-2" to="/sign-up">
-              <i class="fas fa-user-circle opacity-6 me-1" aria-hidden="true"
-                :class="isBlur ? 'text-dark' : 'text-white'"></i>
+              <i
+                class="fas fa-user-circle opacity-6 me-1"
+                aria-hidden="true"
+                :class="isBlur ? 'text-dark' : 'text-white'"
+              ></i>
               Solicitar conta
             </router-link>
           </li>
           <li class="nav-item">
             <router-link class="nav-link me-2" to="/sign-in">
-              <i class="fas fa-key opacity-6 me-1" aria-hidden="true" :class="isBlur ? 'text-dark' : 'text-white'"></i>
+              <i
+                class="fas fa-key opacity-6 me-1"
+                aria-hidden="true"
+                :class="isBlur ? 'text-dark' : 'text-white'"
+              ></i>
               Login
             </router-link>
           </li>
@@ -45,7 +72,6 @@
 </template>
 
 <script>
-
 export default {
   name: "navbar",
   props: {

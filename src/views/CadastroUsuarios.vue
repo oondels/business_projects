@@ -11,7 +11,7 @@
           label="Unidade"
           v-model="dassUnits.selection"
           @update:modelValue="upgradeUnit"
-          :items="['Santo Estêvão', 'Vitória da Conquista', 'Itaberaba']"
+          :items="['Vitória da Conquista', 'Itaberaba']"
           clearable
         />
         <v-text-field
@@ -120,7 +120,6 @@ export default {
   data() {
     return {
       dassUnits: {
-        "Santo Estêvão": "SEST",
         "Vitória da Conquista": "VDC",
         Itaberaba: "ITB",
         Itapipoca: "ITP",
