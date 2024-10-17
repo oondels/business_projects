@@ -374,82 +374,153 @@ export default {
         this.abastecimentos = [];
       }
 
-      const getMinId = (ids) => {
-        const cleanedIds = ids.split(",").map((id) => id.trim());
-        return Math.min(...cleanedIds.map(Number));
-      };
-
-      let idSolicitacaoFiltrado;
       if (solicitacaoId.includes(",")) {
-        idSolicitacaoFiltrado = getMinId(solicitacaoId);
-      }
+        let solicitacaoIds;
+        const getMinId = (ids) => {
+          solicitacaoIds = ids.split(",").map((id) => id.trim());
+          return Math.min(...solicitacaoIds.map(Number));
+        };
 
-      let data = new Date();
+        let idSolicitacaoFiltrado;
+        if (solicitacaoId.includes(",")) {
+          idSolicitacaoFiltrado = getMinId(solicitacaoId);
+        }
 
-      // Checar
-      let produto = this.abastecimentos.find(
-        (p) =>
-          p.id === produtoId &&
-          getMinId(p.solicitacaoId) === idSolicitacaoFiltrado
-      );
+        let data = new Date();
 
-      if (!produto) {
-        let solicitacao = this.solicitacoesPacote.find(
-          (s) => s.solicitacao_ids === solicitacaoId
+        let produto = this.abastecimentos.find(
+          (p) =>
+            p.id === produtoId &&
+            getMinId(p.solicitacaoId) === idSolicitacaoFiltrado
         );
 
-        // Coletando informação do resíduo (Se um produto tiver sido abstecido e salvo sem finalizar)
-        let solicitacaoResiduoData = this.produtosSalvos.find(
-          (data) => parseInt(data.id) === idSolicitacaoFiltrado
-        );
-
-        if (solicitacao) {
-          let produtoData = solicitacao.produtos.find(
-            (p) => p.id === produtoId
+        if (!produto) {
+          let solicitacao = this.solicitacoesPacote.find(
+            (s) => s.solicitacao_ids === solicitacaoId
           );
-          let residuo = null;
 
-          if (solicitacao.produto_salvo) {
-            residuo = solicitacaoResiduoData.abastecimento.find(
-              (res) => res.id === produtoId
+          // Coletando informação do resíduo (Se um produto tiver sido abstecido e salvo sem finalizar)
+          let solicitacaoResiduoData = this.produtosSalvos.find(
+            (data) => parseInt(data.id) === idSolicitacaoFiltrado
+          );
+
+          if (solicitacao) {
+            let produtoData = solicitacao.produtos.find(
+              (p) => p.id === produtoId
             );
-          }
+            let residuo = null;
 
-          if (produtoData) {
-            let totalFinal = produtoData.consumo_previo * solicitacao.producao;
-            let consumoPrevio = totalFinal / 4;
+            if (solicitacao.produto_salvo) {
+              residuo = solicitacaoResiduoData.abastecimento.find(
+                (res) => res.id === produtoId
+              );
+            }
 
-            produto = {
-              produto: produtoData.produto,
-              consumo_previo: produtoData.consumo_previo,
-              preco_kg: produtoData.preco_kg,
-              "1° Horário": consumoPrevio.toFixed(2),
-              "2° Horário": consumoPrevio.toFixed(2),
-              "3° Horário": consumoPrevio.toFixed(2),
-              "4° Horário": consumoPrevio.toFixed(2),
-              Final: residuo ? residuo["Final"] : totalFinal.toFixed(2),
-              Resíduo: residuo ? residuo["Resíduo"] : null,
-              abastecedor: this.decodeJwt().usuario,
-              celula: solicitacao.celula,
-              mes: data.getMonth() + 1,
-              data: data,
-              modelo: solicitacao.modelo,
-              processo: solicitacao.processo,
-              gerente: solicitacao.gerente,
-              createdate: solicitacao.createdate,
-              fabrica: solicitacao.fabrica,
-              id: produtoId,
-              solicitacaoId: solicitacaoId,
-            };
+            if (produtoData) {
+              let totalFinal =
+                produtoData.consumo_previo * solicitacao.producao;
+              let consumoPrevio = totalFinal / 4;
 
-            let existe = this.abastecimentos.some((p) => p.id === produtoId);
-            if (!existe) {
-              this.abastecimentos.push(produto);
+              produto = {
+                produto: produtoData.produto,
+                consumo_previo: produtoData.consumo_previo,
+                preco_kg: produtoData.preco_kg,
+                "1° Horário": consumoPrevio.toFixed(2),
+                "2° Horário": consumoPrevio.toFixed(2),
+                "3° Horário": consumoPrevio.toFixed(2),
+                "4° Horário": consumoPrevio.toFixed(2),
+                Final: residuo
+                  ? parseFloat(residuo["Final"])
+                  : totalFinal.toFixed(2),
+                Resíduo: residuo ? residuo["Resíduo"] : 0,
+                abastecedor: this.decodeJwt().usuario,
+                celula: solicitacao.celula,
+                mes: data.getMonth() + 1,
+                data: data,
+                modelo: solicitacao.modelo,
+                processo: solicitacao.processo,
+                gerente: solicitacao.gerente,
+                createdate: solicitacao.createdate,
+                fabrica: solicitacao.fabrica,
+                id: produtoId,
+                solicitacaoId: solicitacaoId,
+              };
+
+              let existe = this.abastecimentos.some((p) => p.id === produtoId);
+              if (!existe) {
+                this.abastecimentos.push(produto);
+              }
             }
           }
         }
+        return produto;
+      } else {
+        let data = new Date();
+
+        let produto = this.abastecimentos.find(
+          (p) => p.id === produtoId && p.solicitacaoId === solicitacaoId
+        );
+
+        if (!produto) {
+          let solicitacao = this.solicitacoesPacote.find(
+            (s) => s.solicitacao_ids === solicitacaoId
+          );
+
+          // Coletando informação do resíduo (Se um produto tiver sido abstecido e salvo sem finalizar)
+          let solicitacaoResiduoData = this.produtosSalvos.find(
+            (data) => data.id === solicitacaoId
+          );
+
+          if (solicitacao) {
+            let produtoData = solicitacao.produtos.find(
+              (p) => p.id === produtoId
+            );
+            let residuo = null;
+
+            if (solicitacao.produto_salvo) {
+              residuo = solicitacaoResiduoData.abastecimento.find(
+                (res) => res.id === produtoId
+              );
+            }
+
+            if (produtoData) {
+              let totalFinal =
+                produtoData.consumo_previo * solicitacao.producao;
+              let consumoPrevio = totalFinal / 4;
+
+              produto = {
+                produto: produtoData.produto,
+                consumo_previo: produtoData.consumo_previo,
+                preco_kg: produtoData.preco_kg,
+                "1° Horário": consumoPrevio.toFixed(2),
+                "2° Horário": consumoPrevio.toFixed(2),
+                "3° Horário": consumoPrevio.toFixed(2),
+                "4° Horário": consumoPrevio.toFixed(2),
+                Final: residuo ? residuo["Final"] : totalFinal.toFixed(2),
+                Resíduo: residuo ? residuo["Resíduo"] : null,
+                abastecedor: this.decodeJwt().usuario,
+                celula: solicitacao.celula,
+                mes: data.getMonth() + 1,
+                data: data,
+                modelo: solicitacao.modelo,
+                processo: solicitacao.processo,
+                gerente: solicitacao.gerente,
+                createdate: solicitacao.createdate,
+                fabrica: solicitacao.fabrica,
+                id: produtoId,
+                solicitacaoId: solicitacaoId,
+              };
+
+              let existe = this.abastecimentos.some((p) => p.id === produtoId);
+              if (!existe) {
+                this.abastecimentos.push(produto);
+              }
+            }
+          }
+        }
+
+        return produto;
       }
-      return produto;
     },
 
     getProdutoSalvo() {

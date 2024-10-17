@@ -595,20 +595,35 @@ app.post("/manipulaAbastecimento", async (req, res) => {
       return res.status(200).send("Iniciado com sucesso");
     }
 
+    let count_save = 0;
     if (abastecimento.instrucao === "salvar") {
       for (let id of checkAbastecimento(abastecimento.id)) {
-        await pool.query(
-          `
-            UPDATE
-              quimico.solicitacoes_pacotes
-            SET
-              abastecimento = $1,
-              produto_salvo = true,
-              producao = $2
-            WHERE
-              id = $3`,
-          [abastecimento.abastecimentos, abastecimento.producao, id]
-        );
+        if (count_save === 0) {
+          await pool.query(
+            `
+              UPDATE
+                quimico.solicitacoes_pacotes
+              SET
+                abastecimento = $1,
+                produto_salvo = true
+              WHERE
+                id = $2`,
+            [abastecimento.abastecimentos, id]
+          );
+        } else {
+          await pool.query(
+            `
+              UPDATE
+                quimico.solicitacoes_pacotes
+              SET
+                produto_salvo = true
+              WHERE
+                id = $1`,
+            [id]
+          );
+        }
+
+        count_save += 1;
       }
 
       return res.status(200).json({ message: "Salvo com sucesso" });
@@ -617,18 +632,31 @@ app.post("/manipulaAbastecimento", async (req, res) => {
     if (abastecimento.instrucao === "fim") {
       const abastecimentosJson = JSON.parse(abastecimento.abastecimentos)[0];
 
-      if (!abastecimentosJson.Resíduo || !abastecimentosJson.Final) {
+      if (!abastecimentosJson.Final) {
         return res.status(400).json({
           message:
             "Dados incorretos ou ausentes. Verifique preenchimento e tente novamente!",
         });
       }
 
+      if (!abastecimentosJson.Resíduo) {
+        abastecimentosJson.Resíduo = 0;
+      }
+
+      let count_end = 0;
       for (let id of checkAbastecimento(abastecimento.id)) {
-        await pool.query(
-          `UPDATE quimico.solicitacoes_pacotes SET entregue = true, data_fim = NOW(), usuario_fim = $1, abastecimento = $2 WHERE id = $3`,
-          [abastecimento.usuario, abastecimento.abastecimentos, id]
-        );
+        if (count_end === 0) {
+          await pool.query(
+            `UPDATE quimico.solicitacoes_pacotes SET entregue = true, data_fim = NOW(), usuario_fim = $1, abastecimento = $2 WHERE id = $3`,
+            [abastecimento.usuario, abastecimento.abastecimentos, id]
+          );
+        } else {
+          await pool.query(
+            `UPDATE quimico.solicitacoes_pacotes SET entregue = true, data_fim = NOW(), usuario_fim = $1 WHERE id = $2`,
+            [abastecimento.usuario, id]
+          );
+        }
+        count_end += 1;
       }
 
       return res.status(200).json({ message: "Finalizado com sucesso" });
