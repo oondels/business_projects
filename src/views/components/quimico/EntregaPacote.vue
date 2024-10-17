@@ -153,7 +153,10 @@
                     type="number"
                     variant="outlined"
                     v-model="
-                      getAbastecimentoModel(solicitacao.id, produto.id)[label]
+                      getAbastecimentoModel(
+                        solicitacao.solicitacao_ids,
+                        produto.id
+                      )[label]
                     "
                   ></v-text-field>
                 </div>
@@ -163,7 +166,9 @@
               <v-spacer></v-spacer>
               <v-btn
                 v-if="!solicitacao.abastecendo && !solicitacao.cancelado"
-                @click="manipulaAbastecimento(solicitacao.id, 'inicio')"
+                @click="
+                  manipulaAbastecimento(solicitacao.solicitacao_ids, 'inicio')
+                "
                 color="warning"
                 variant="flat"
                 text="Iniciar abastecimento"
@@ -171,7 +176,13 @@
 
               <v-btn
                 v-if="!solicitacao.cancelado && solicitacao.abastecendo"
-                @click="manipulaAbastecimento(solicitacao.id, 'salvar')"
+                @click="
+                  manipulaAbastecimento(
+                    solicitacao.solicitacao_ids,
+                    'salvar',
+                    solicitacao.producao
+                  )
+                "
                 color="warning"
                 variant="flat"
                 text="Salvar abastecimento"
@@ -179,7 +190,9 @@
 
               <v-btn
                 v-if="solicitacao.abastecendo && !solicitacao.cancelado"
-                @click="manipulaAbastecimento(solicitacao.id, 'fim')"
+                @click="
+                  manipulaAbastecimento(solicitacao.solicitacao_ids, 'fim')
+                "
                 color="success"
                 variant="flat"
                 text="Fechar pedido"
@@ -191,7 +204,7 @@
                 color="danger"
                 variant="flat"
                 text="Excluír"
-                @click="excluiSolicitacao(solicitacao.id)"
+                @click="excluiSolicitacao(solicitacao.solicitacao_ids)"
               ></v-btn>
             </v-card-actions>
           </div>
@@ -361,27 +374,39 @@ export default {
         this.abastecimentos = [];
       }
 
+      const getMinId = (ids) => {
+        const cleanedIds = ids.split(",").map((id) => id.trim());
+        return Math.min(...cleanedIds.map(Number));
+      };
+
+      let idSolicitacaoFiltrado;
+      if (solicitacaoId.includes(",")) {
+        idSolicitacaoFiltrado = getMinId(solicitacaoId);
+      }
+
       let data = new Date();
 
+      // Checar
       let produto = this.abastecimentos.find(
-        (p) => p.id === produtoId && p.solicitacaoId === solicitacaoId
+        (p) =>
+          p.id === produtoId &&
+          getMinId(p.solicitacaoId) === idSolicitacaoFiltrado
       );
 
       if (!produto) {
         let solicitacao = this.solicitacoesPacote.find(
-          (s) => s.id === solicitacaoId
+          (s) => s.solicitacao_ids === solicitacaoId
         );
 
         // Coletando informação do resíduo (Se um produto tiver sido abstecido e salvo sem finalizar)
         let solicitacaoResiduoData = this.produtosSalvos.find(
-          (data) => data.id === solicitacaoId
+          (data) => parseInt(data.id) === idSolicitacaoFiltrado
         );
 
         if (solicitacao) {
           let produtoData = solicitacao.produtos.find(
             (p) => p.id === produtoId
           );
-
           let residuo = null;
 
           if (solicitacao.produto_salvo) {
@@ -417,7 +442,10 @@ export default {
               solicitacaoId: solicitacaoId,
             };
 
-            this.abastecimentos.push(produto);
+            let existe = this.abastecimentos.some((p) => p.id === produtoId);
+            if (!existe) {
+              this.abastecimentos.push(produto);
+            }
           }
         }
       }
@@ -433,12 +461,13 @@ export default {
         .catch();
     },
 
-    manipulaAbastecimento(id, instrucao) {
+    manipulaAbastecimento(id, instrucao, producao) {
       const abastecimento = {
         id: id,
         usuario: this.decodeJwt().usuario,
         instrucao: instrucao,
         abastecimentos: JSON.stringify(this.abastecimentos),
+        producao: producao,
       };
 
       axios

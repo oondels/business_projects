@@ -427,58 +427,113 @@ app.post("/salvarSolicitacaoIndividual", async (req, res) => {
 app.get("/pacoteSolicitacao", async (req, res) => {
   try {
     const solicitacao = await pool.query(`
-        SELECT
-            s.id,
-            s.createdate,
-            s.gerente,
-            s.modelo,
-            s.producao,
-            s.celula,
-            s.turno,
-            s.fabrica,
-            s.entregue,
-            s.processo,
-            s.abastecendo,
-            s.cancelado,
-            s.marca,
-            s.produto_salvo,
-            COALESCE(
-                json_agg(
-                    json_build_object(
-                        'id', p.id,
-                        'consumo_previo', p.consumo_previo,
-                        'produto', p.produto,
-                        'consumo_previo', p.consumo_previo,
-                        'preco_kg', p.preco_kg,
-                        'base', p.base,
-                        'recipientes', p.recipientes
-                    )
-                ) FILTER (WHERE p.id_modelo IS NOT NULL), '[]'
-            ) AS produtos
-        FROM
-            quimico.solicitacoes_pacotes s
-        LEFT JOIN
-            quimico.produtos p ON s.id_modelo = p.id_modelo
-        WHERE
-            s.entregue = false AND
-            s.excluido = false
-        GROUP BY
-            s.id,
-            s.createdate,
-            s.gerente,
-            s.modelo,
-            s.producao,
-            s.celula,
-            s.turno,
-            s.fabrica,
-            s.entregue,
-            s.processo,
-            s.abastecendo,
-            s.cancelado,
-            s.marca,
-            s.produto_salvo;
+        WITH solicitacoes_agrupadas AS (
+    SELECT
+        string_agg(DISTINCT s.id_modelo::text, ', ') AS ids,  -- Concatenando os IDs como texto
+        MIN(s.createdate) AS createdate,
+        MIN(s.gerente) AS gerente,
+        string_agg(DISTINCT s.modelo, ' + ') AS modelo,  -- Concatenando os modelos
+        SUM(s.producao) AS producao,
+        s.celula,
+        s.turno,
+        s.fabrica,
+        string_agg(DISTINCT s.id::text, ', ') AS solicitacao_ids,
+        bool_and(s.entregue) AS entregue,
+        MIN(s.processo) AS processo,
+        bool_and(s.abastecendo) AS abastecendo,
+        bool_and(s.cancelado) AS cancelado,
+        s.marca,
+        bool_and(s.produto_salvo) AS produto_salvo
+    FROM
+        quimico.solicitacoes_pacotes s
+    WHERE
+        s.entregue = false
+        AND s.excluido = false
+    GROUP BY
+        s.celula,
+        s.turno,
+        s.marca,
+        s.fabrica
+)
+SELECT
+    sa.ids,
+    sa.solicitacao_ids,
+    sa.createdate,
+    sa.gerente,
+    sa.modelo,
+    sa.producao,
+    sa.celula,
+    sa.turno,
+    sa.fabrica,
+    sa.entregue,
+    sa.processo,
+    sa.abastecendo,
+    sa.cancelado,
+    sa.marca,
+    sa.produto_salvo,
+    COALESCE(
+        jsonb_agg(
+            jsonb_build_object(
+                'id', p.id,
+                'consumo_previo', p.consumo_previo,
+                'produto', p.produto,
+                'preco_kg', p.preco_kg,
+                'base', p.base,
+                'recipientes', p.recipientes
+            )
+        ) FILTER (WHERE p.id_modelo IS NOT NULL), '[]'::jsonb
+    ) AS produtos
+FROM
+    solicitacoes_agrupadas sa
+LEFT JOIN LATERAL (
+    SELECT p.*
+    FROM quimico.produtos p
+    WHERE p.id_modelo::text = ANY (regexp_split_to_array(sa.ids, '\, '))
+) p ON true  -- LATERAL join com os produtos
+GROUP BY
+    sa.ids,
+    sa.solicitacao_ids,
+    sa.createdate,
+    sa.gerente,
+    sa.modelo,
+    sa.producao,
+    sa.celula,
+    sa.turno,
+    sa.fabrica,
+    sa.entregue,
+    sa.processo,
+    sa.abastecendo,
+    sa.cancelado,
+    sa.marca,
+    sa.produto_salvo;
 `);
-    return res.status(200).json(solicitacao.rows);
+
+    const removerDuplicatas = (objetoProdutos) => {
+      if (!objetoProdutos || !objetoProdutos.produtos) {
+        return objetoProdutos; // Retorna o objeto original se não houver produtos
+      }
+
+      // Utilizamos um Map para garantir que os produtos sejam únicos com base nas suas características
+      const produtosUnicos = new Map();
+
+      objetoProdutos.produtos.forEach((produto) => {
+        // Cria uma chave única com base nos atributos do produto
+        const chave = `${produto.produto}-${produto.base}-${produto.preco_kg}-${produto.recipientes}-${produto.consumo_previo}`;
+
+        // Adiciona o produto ao mapa se a chave ainda não existir
+        if (!produtosUnicos.has(chave)) {
+          produtosUnicos.set(chave, produto);
+        }
+      });
+
+      // Atualiza o array de produtos no objeto original, convertendo os valores únicos do mapa para um array
+      objetoProdutos.produtos = Array.from(produtosUnicos.values());
+
+      // Retorna o objeto atualizado, com a lista de produtos única
+      return [objetoProdutos];
+    };
+
+    return res.status(200).json(removerDuplicatas(solicitacao.rows[0]));
   } catch (error) {
     console.error("Erro interno no servidor: ", error);
 
@@ -521,27 +576,41 @@ app.post("/manipulaAbastecimento", async (req, res) => {
   try {
     const { abastecimento } = req.body;
 
+    let ids;
+    const checkAbastecimento = (abastecimento) => {
+      if (abastecimento.includes(",")) {
+        ids = abastecimento.split(",").map((id) => id.trim());
+        return ids;
+      }
+      return [abastecimento];
+    };
+
     if (abastecimento.instrucao === "inicio") {
-      const inicio = await pool.query(
-        `UPDATE quimico.solicitacoes_pacotes SET abastecendo = true, data_inicio = NOW(), usuario_inicio = $1 WHERE id = $2`,
-        [abastecimento.usuario, abastecimento.id]
-      );
+      for (let id of checkAbastecimento(abastecimento.id)) {
+        await pool.query(
+          `UPDATE quimico.solicitacoes_pacotes SET abastecendo = true, data_inicio = NOW(), usuario_inicio = $1 WHERE id = $2`,
+          [abastecimento.usuario, id]
+        );
+      }
       return res.status(200).send("Iniciado com sucesso");
     }
 
     if (abastecimento.instrucao === "salvar") {
-      // console.log(abastecimento);
+      for (let id of checkAbastecimento(abastecimento.id)) {
+        await pool.query(
+          `
+            UPDATE
+              quimico.solicitacoes_pacotes
+            SET
+              abastecimento = $1,
+              produto_salvo = true,
+              producao = $2
+            WHERE
+              id = $3`,
+          [abastecimento.abastecimentos, abastecimento.producao, id]
+        );
+      }
 
-      await pool.query(
-        `
-        UPDATE quimico.solicitacoes_pacotes 
-        SET 
-          abastecimento = $1,
-          produto_salvo = true
-        WHERE 
-          id = $2`,
-        [abastecimento.abastecimentos, abastecimento.id]
-      );
       return res.status(200).json({ message: "Salvo com sucesso" });
     }
 
@@ -555,13 +624,17 @@ app.post("/manipulaAbastecimento", async (req, res) => {
         });
       }
 
-      const fim = await pool.query(
-        `UPDATE quimico.solicitacoes_pacotes SET entregue = true, data_fim = NOW(), usuario_fim = $1, abastecimento = $2 WHERE id = $3`,
-        [abastecimento.usuario, abastecimento.abastecimentos, abastecimento.id]
-      );
+      for (let id of checkAbastecimento(abastecimento.id)) {
+        await pool.query(
+          `UPDATE quimico.solicitacoes_pacotes SET entregue = true, data_fim = NOW(), usuario_fim = $1, abastecimento = $2 WHERE id = $3`,
+          [abastecimento.usuario, abastecimento.abastecimentos, id]
+        );
+      }
+
       return res.status(200).json({ message: "Finalizado com sucesso" });
     }
   } catch (error) {
+    console.error(error);
     return res.status(500).send("Erro interno do servidor");
   }
 });
