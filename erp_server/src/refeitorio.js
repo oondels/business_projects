@@ -148,7 +148,7 @@ app.get("/buscaConfiguracao", async (req, res) => {
 app.post("/salvaReserva", async (req, res) => {
   try {
     const { matricula, codigoRfid, opcaoSelecionada } = req.body;
-    let unidade = "SEST";
+    let unidade = "ITB";
 
     if (!matricula || !codigoRfid || !opcaoSelecionada) {
       if (Number(matricula).length !== 7) {
@@ -163,6 +163,11 @@ app.post("/salvaReserva", async (req, res) => {
     if (matricula.toString().startsWith("5")) {
       buscaColaboradorListaFuncionario += `_itb`;
       unidade = "ITB";
+    }
+
+    if (matricula.toString().startsWith("4")) {
+      buscaColaboradorListaFuncionario += `_vdc`;
+      unidade = "VDC";
     }
 
     buscaColaboradorListaFuncionario += ` WHERE matricula = $1`;
@@ -426,7 +431,7 @@ app.post("/entregaReservaPeloRfid", async (req, res) => {
 
 app.post("/entregaReservaPelaMatricula", async (req, res) => {
   const { matricula } = req.body;
-  let unidade = "SEST";
+  let unidade = "ITB";
 
   if (!matricula) {
     return res.status(422).json({ error: "Leitura inválida" });
@@ -435,6 +440,10 @@ app.post("/entregaReservaPelaMatricula", async (req, res) => {
   try {
     if (matricula.toString().startsWith("5")) {
       unidade = "ITB";
+    }
+
+    if (matricula.toString().startsWith("4")) {
+      unidade = "VDC";
     }
 
     const verificaDisponibilidade = await pool.query(

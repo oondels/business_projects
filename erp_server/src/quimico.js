@@ -428,112 +428,131 @@ app.get("/pacoteSolicitacao", async (req, res) => {
   try {
     const solicitacao = await pool.query(`
         WITH solicitacoes_agrupadas AS (
-    SELECT
-        string_agg(DISTINCT s.id_modelo::text, ', ') AS ids,  -- Concatenando os IDs como texto
-        MIN(s.createdate) AS createdate,
-        MIN(s.gerente) AS gerente,
-        string_agg(DISTINCT s.modelo, ' + ') AS modelo,  -- Concatenando os modelos
-        SUM(s.producao) AS producao,
-        s.celula,
-        s.turno,
-        s.fabrica,
-        string_agg(DISTINCT s.id::text, ', ') AS solicitacao_ids,
-        bool_and(s.entregue) AS entregue,
-        MIN(s.processo) AS processo,
-        bool_and(s.abastecendo) AS abastecendo,
-        bool_and(s.cancelado) AS cancelado,
-        s.marca,
-        bool_and(s.produto_salvo) AS produto_salvo
-    FROM
-        quimico.solicitacoes_pacotes s
-    WHERE
-        s.entregue = false
-        AND s.excluido = false
-    GROUP BY
-        s.celula,
-        s.turno,
-        s.marca,
-        s.fabrica
-)
-SELECT
-    sa.ids,
-    sa.solicitacao_ids,
-    sa.createdate,
-    sa.gerente,
-    sa.modelo,
-    sa.producao,
-    sa.celula,
-    sa.turno,
-    sa.fabrica,
-    sa.entregue,
-    sa.processo,
-    sa.abastecendo,
-    sa.cancelado,
-    sa.marca,
-    sa.produto_salvo,
-    COALESCE(
-        jsonb_agg(
-            jsonb_build_object(
-                'id', p.id,
-                'consumo_previo', p.consumo_previo,
-                'produto', p.produto,
-                'preco_kg', p.preco_kg,
-                'base', p.base,
-                'recipientes', p.recipientes
-            )
-        ) FILTER (WHERE p.id_modelo IS NOT NULL), '[]'::jsonb
-    ) AS produtos
-FROM
-    solicitacoes_agrupadas sa
-LEFT JOIN LATERAL (
-    SELECT p.*
-    FROM quimico.produtos p
-    WHERE p.id_modelo::text = ANY (regexp_split_to_array(sa.ids, '\, '))
-) p ON true  -- LATERAL join com os produtos
-GROUP BY
-    sa.ids,
-    sa.solicitacao_ids,
-    sa.createdate,
-    sa.gerente,
-    sa.modelo,
-    sa.producao,
-    sa.celula,
-    sa.turno,
-    sa.fabrica,
-    sa.entregue,
-    sa.processo,
-    sa.abastecendo,
-    sa.cancelado,
-    sa.marca,
-    sa.produto_salvo;
+          SELECT
+              string_agg(DISTINCT s.id_modelo::text, ', ') AS ids,  -- Concatenando os IDs como texto
+              MIN(s.createdate) AS createdate,
+              MIN(s.gerente) AS gerente,
+              string_agg(DISTINCT s.modelo, ' + ') AS modelo,  -- Concatenando os modelos
+              SUM(s.producao) AS producao,
+              s.celula,
+              s.turno,
+              s.fabrica,
+              string_agg(DISTINCT s.id::text, ', ') AS solicitacao_ids,
+              bool_and(s.entregue) AS entregue,
+              MIN(s.processo) AS processo,
+              bool_and(s.abastecendo) AS abastecendo,
+              bool_and(s.cancelado) AS cancelado,
+              s.marca,
+              bool_and(s.produto_salvo) AS produto_salvo
+          FROM
+              quimico.solicitacoes_pacotes s
+          WHERE
+              s.entregue = false
+              AND s.excluido = false
+          GROUP BY
+              s.celula,
+              s.turno,
+              s.marca,
+              s.fabrica
+      )
+      SELECT
+          sa.ids,
+          sa.solicitacao_ids,
+          sa.createdate,
+          sa.gerente,
+          sa.modelo,
+          sa.producao,
+          sa.celula,
+          sa.turno,
+          sa.fabrica,
+          sa.entregue,
+          sa.processo,
+          sa.abastecendo,
+          sa.cancelado,
+          sa.marca,
+          sa.produto_salvo,
+          COALESCE(
+              jsonb_agg(
+                  jsonb_build_object(
+                      'id', p.id,
+                      'consumo_previo', p.consumo_previo,
+                      'produto', p.produto,
+                      'preco_kg', p.preco_kg,
+                      'base', p.base,
+                      'recipientes', p.recipientes
+                  )
+              ) FILTER (WHERE p.id_modelo IS NOT NULL), '[]'::jsonb
+          ) AS produtos
+      FROM
+          solicitacoes_agrupadas sa
+      LEFT JOIN LATERAL (
+          SELECT p.*
+          FROM quimico.produtos p
+          WHERE p.id_modelo::text = ANY (regexp_split_to_array(sa.ids, '\, '))
+      ) p ON true  -- LATERAL join com os produtos
+      GROUP BY
+          sa.ids,
+          sa.solicitacao_ids,
+          sa.createdate,
+          sa.gerente,
+          sa.modelo,
+          sa.producao,
+          sa.celula,
+          sa.turno,
+          sa.fabrica,
+          sa.entregue,
+          sa.processo,
+          sa.abastecendo,
+          sa.cancelado,
+          sa.marca,
+          sa.produto_salvo;
 `);
 
     const removerDuplicatas = (objetoProdutos) => {
-      if (!objetoProdutos || !objetoProdutos.produtos) {
-        return objetoProdutos; // Retorna o objeto original se não houver produtos
-      }
-
-      // Utilizamos um Map para garantir que os produtos sejam únicos com base nas suas características
-      const produtosUnicos = new Map();
-
-      objetoProdutos.produtos.forEach((produto) => {
-        // Cria uma chave única com base nos atributos do produto
-        const chave = `${produto.produto}-${produto.base}-${produto.preco_kg}-${produto.recipientes}-${produto.consumo_previo}`;
-
-        // Adiciona o produto ao mapa se a chave ainda não existir
-        if (!produtosUnicos.has(chave)) {
-          produtosUnicos.set(chave, produto);
+      let objs = [];
+      objetoProdutos.forEach((obj) => {
+        if (!obj || !obj.produtos || obj.ids.split(",").length === 1) {
+          objs.push(obj);
+          return;
         }
+
+        // Utilizamos um Map para garantir que os produtos sejam únicos com base nas suas características
+        const produtosUnicos = new Map();
+
+        obj.produtos.forEach((produto) => {
+          console.log(produto);
+          // Cria uma chave única com base nos atributos do produto
+          function normalizeText(text) {
+            return text
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .toUpperCase()
+              .trim();
+          }
+
+          const chave = `${normalizeText(produto.produto)}-${normalizeText(
+            produto.base
+          )}-${parseFloat(produto.preco_kg).toFixed(2)}-${
+            produto.recipientes
+          }-${parseFloat(produto.consumo_previo).toFixed(3)}`;
+
+          // Adiciona o produto ao mapa se a chave ainda não existir
+          if (!produtosUnicos.has(chave)) {
+            produtosUnicos.set(chave, produto);
+          }
+        });
+
+        // Atualiza o array de produtos no objeto original, convertendo os valores únicos do mapa para um array
+        obj.produtos = Array.from(produtosUnicos.values());
+
+        // Retorna o objeto atualizado, com a lista de produtos única
+        objs.push(obj);
       });
 
-      // Atualiza o array de produtos no objeto original, convertendo os valores únicos do mapa para um array
-      objetoProdutos.produtos = Array.from(produtosUnicos.values());
-
-      // Retorna o objeto atualizado, com a lista de produtos única
-      return [objetoProdutos];
+      return objs;
     };
 
-    return res.status(200).json(removerDuplicatas(solicitacao.rows[0]));
+    return res.status(200).json(removerDuplicatas(solicitacao.rows));
   } catch (error) {
     console.error("Erro interno no servidor: ", error);
 

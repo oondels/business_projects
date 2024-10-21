@@ -80,7 +80,7 @@
             <v-select
               label="Unidade"
               v-model="unidadeDadosGrafico"
-              :items="['Santo Estêvão', 'Vitória da Conquista', 'Itaberaba']"
+              :items="['Itaberaba', 'Vitória da Conquista']"
               @update:modelValue="buscaDadosGlobais"
             ></v-select>
 
@@ -575,7 +575,7 @@ export default {
       showChart: false,
       chartData: {},
 
-      unidadeDadosGrafico: "Santo Estêvão",
+      unidadeDadosGrafico: "Itaberaba",
 
       reservasDoDia: [],
       reservasLanche: [],
@@ -855,16 +855,15 @@ export default {
 
     buscaDadosGlobais() {
       let unidadeMap = {
-        "Santo Estêvão": "SEST",
         "Vitória da Conquista": "VDC",
         Itaberaba: "ITB",
       };
 
-      let unidade = unidadeMap[this.unidadeDadosGrafico] || "SEST";
+      let unidade = unidadeMap[this.unidadeDadosGrafico] || "ITB";
 
       if (this.decodeJwt()) {
         this.unidadeDadosGrafico = this.decodeJwt().unidade;
-        unidade = this.decodeJwt().unidade;
+        unidade = this.decodeJwt().unidade || "ITB";
       }
 
       this.showChart = false;
@@ -1218,6 +1217,7 @@ export default {
           });
       }
     },
+
     gerarXlsxQuantidadeSabado(dados, dataReserva) {
       let dadosFormatados = [];
 
