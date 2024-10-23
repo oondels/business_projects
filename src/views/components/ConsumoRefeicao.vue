@@ -90,10 +90,10 @@
   <v-dialog v-model="dialogShown" max-width="400">
     <v-card :color="corAlerta" dark>
       <v-card-title class="headline">
-        <i :class="iconeAlerta"></i>
+        <i class="material-icons-round opacity-10 fs-4" >{{iconeAlerta}}</i>
         {{ tituloAlerta }}
       </v-card-title>
-      <v-card-text class="fs-1">
+      <v-card-text >
         {{ mensagemAlerta }}
       </v-card-text>
       <v-card-actions>
@@ -101,17 +101,22 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+
+  <alert ref="alert" />
 </template>
+
 <script>
 import MiniStatisticsCard from "@/examples/Cards/MiniStatisticsCard.vue";
 // import ListaReservasDoDia from "./ListaReservasDoDia.vue";
 import axios from "axios";
 import ip from "../../ip";
+import Alert from "../components/Alert.vue";
 
 const body = document.getElementsByTagName("body")[0];
 
 export default {
   name: "consumo-refeicao",
+
   data() {
     return {
       codigoRfid: "",
@@ -146,39 +151,40 @@ export default {
     },
 
     entregaReservaPeloRfid() {
+      // if (typeof this.codigoRfid === 'string') {
+      //   return this.$refs.alert.mostrarAlerta(
+      //         "warning",
+      //         "warning",
+      //         "Erro",
+      //         "Aproxime um crachá válido."
+      //       );
+      // }
       axios
         .post(`http://${ip}:3048/entregaReservaPeloRfid`, {
           codigoRfid: this.codigoRfid,
         })
         .then((response) => {
+          this.reservaEncontrada = true;
+          this.codigoRfid = "";
+          this.mostrarAlerta(
+            "success",
+            "done_outlined",
+            "Sucesso",
+            `Reserva ${response.data.reserva.opcao_selecionada} concluída com sucesso`
+          );
           this.$emit("atualizar-informacao");
-          if (response.status === 200) {
-            this.reservaEncontrada = true;
-            this.codigoRfid = "";
-            this.mostrarAlerta(
-              "success",
-              "fas fa-thumbs-up",
-              "Sucesso",
-              `Reserva ${response.data.reserva.opcao_selecionada}`
-            );
-          }
         })
         .catch((error) => {
+          console.error(`Erro ao buscar reserva pelo rfid: ${error}`);
+
           this.$emit("atualizar-informacao");
-          if (error.response.status === 500) {
-            this.codigoRfid = "";
-            this.reservaEncontrada = false;
-            this.focoNoInput("matriculaField");
-            this.mostrarAlerta(
-              "danger",
-              "fas fa-thumbs-down",
-              "Erro",
-              "Contate o suporte"
-            );
-          } else if (error.response.status === 404) {
-            this.reservaEncontrada = false;
-            this.focoNoInput("matriculaField");
-          }
+          this.$refs.alert.mostrarAlerta(
+            "danger",
+            "warning",
+            "Erro",
+            error.response.data.error
+          );
+          // this.$refs["matriculaField"].focus();
         });
     },
 
@@ -196,9 +202,9 @@ export default {
             this.reservaEncontrada = true;
             this.mostrarAlerta(
               "success",
-              "fas fa-thumbs-up",
+              "done_outilened",
               "Sucesso",
-              `Reserva ${response.data.reserva.opcao_selecionada}`
+              `Reserva ${response.data.reserva.opcao_selecionada} concluída com sucesso`
             );
           }
         })
@@ -210,14 +216,14 @@ export default {
             this.reservaEncontrada = true;
             this.mostrarAlerta(
               "danger",
-              "fas fa-thumbs-down",
+              "danger",
               "Erro",
               "Contate o suporte"
             );
           } else if (error.response.status === 404) {
             this.mostrarAlerta(
               "warning",
-              "fas fa-exclamation",
+              "warning",
               "Aviso",
               "Não existe reserva para esta matrícula"
             );
@@ -269,6 +275,7 @@ export default {
   },
   components: {
     MiniStatisticsCard,
+    Alert,
     // ListaReservasDoDia,
   },
 };

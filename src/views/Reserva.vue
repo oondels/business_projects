@@ -127,10 +127,14 @@
             <div class="col-6">
               <v-btn
                 :disabled="!matricula"
-                @click="concluir()"
+                @click="
+                  buscaColaboradorPelaMatricula(matricula);
+                  concluir();
+                "
                 class="col-12 mb-4 bg-success font-weight-bold text-white fs-5"
-                >Concluir</v-btn
               >
+                Concluir
+              </v-btn>
             </div>
           </div>
         </v-stepper-window>
@@ -153,13 +157,15 @@
       </v-card>
     </v-dialog>
   </div>
+  <alert ref="alert" />
 </template>
 
 <script>
 import AppFooter from "@/examples/Footer.vue";
 import axios from "axios";
-import ip from "../ip";
 import VueJwtDecode from "vue-jwt-decode";
+import ip from "../ip";
+import Alert from "./components/Alert.vue";
 
 const body = document.getElementsByTagName("body")[0];
 
@@ -167,6 +173,7 @@ export default {
   name: "reserva",
   components: {
     AppFooter,
+    Alert,
   },
 
   data() {
@@ -184,8 +191,7 @@ export default {
 
       codigoRfidRules: [
         this.matricula ||
-          "Parece que a sua matricula não consta em nossos registros",
-      ],
+          "Parece que a sua matricula não consta em nossos registros"],
 
       colaboradorExistente: true,
 
@@ -214,6 +220,12 @@ export default {
         .then((response) => {
           if (!response.data.matricula) {
             this.colaboradorExistente = false;
+            this.$refs.alert.mostrarAlerta(
+              "warning",
+              "error",
+              "Erro",
+              "Colaborador não encontrado por aproximação, por favor insira a matrícula (COM O 30)."
+            );
             this.focoNoInput("matriculaField");
           } else {
             this.colaboradorExistente = true;
@@ -233,25 +245,26 @@ export default {
           },
         })
         .then((response) => {
-          if (!response.data) {
-            this.mostrarAlerta(
-              "danger",
-              "fas fa-thumbs-down",
+          this.nomeColaborador = response.data.nome;
+          console.log(response.data)
+          return this.concluir()
+        })
+        .catch(error => {
+          console.error(`Colaborador não encontrado, verifique matricula: ${error}`);
+          return this.$refs.alert.mostrarAlerta(
+              "warning",
+              "error",
               "Erro",
-              "Você pode ter inserido o crachá incorreto"
+              error.response.data.error
             );
-          } else {
-            this.nomeColaborador = response.data;
-            this.concluir();
-          }
-        });
+        })
     },
 
     concluir() {
       if (!this.codigoRfid) {
         this.mostrarAlerta(
           "danger",
-          "fas fa-thumbs-down",
+          "danger",
           "Erro",
           "Você precisa aproximar o crachá"
         );
@@ -260,7 +273,7 @@ export default {
       if (this.matricula.length !== 7) {
         this.mostrarAlerta(
           "warning",
-          "fas fa-exclamation",
+          "warning",
           "Erro",
           "Insira o crachá completo!"
         );
@@ -273,51 +286,25 @@ export default {
           opcaoSelecionada: this.selectedOption,
         })
         .then((response) => {
-          if (response.status === 200) {
-            this.mostrarAlerta(
+          this.$refs.alert.mostrarAlerta(
               "success",
-              "fas fa-thumbs-up",
+              "done_outlined",
               "Sucesso",
-              `${this.selectedOption.toUpperCase()} para ${
-                this.nomeColaborador
-              }`
+              response.data.message
             );
-            this.initialStep();
-          } else {
-            this.mostrarAlerta(
-              "danger",
-              "fas fa-thumbs-down",
-              "Erro",
-              "Erro ao salvar reserva"
-            );
-          }
+
+            setTimeout(() => {
+              this.initialStep();
+            }, 1000);
         })
         .catch((error) => {
-          if (error.response.status === 400) {
-            this.mostrarAlerta(
+          console.error(`Erro ao salvar reserva: ${error}`);
+          return this.$refs.alert.mostrarAlerta(
               "warning",
-              "fas fa-exclamation",
-              "Atenção",
-              "Sua reserva já foi feita"
-            );
-            this.initialStep();
-          } else if (error.response.status === 422) {
-            this.mostrarAlerta(
-              "warning",
-              "fas fa-exclamation",
-              "Atenção",
-              "Dados obrigatórios não foram preenchidos"
-            );
-          } else {
-            this.mostrarAlerta(
-              "danger",
-              "fas fa-thumbs-down",
+              "error",
               "Erro",
-              "Erro ao salvar reserva"
+              error.response.data.error
             );
-            console.error("Erro ao salvar reserva para o sábado: ", error);
-            this.initialStep();
-          }
         });
     },
 

@@ -49,7 +49,7 @@ app.get("/", (req, res) => {
 app.get("/buscaColaboradorPeloRfid", async (req, res) => {
   try {
     const rfid = req.query.rfid;
-    const unidade = req.query.unidade;
+    const unidade = "SEST";
 
     const result = await pool.query(
       `
@@ -62,6 +62,7 @@ app.get("/buscaColaboradorPeloRfid", async (req, res) => {
         `,
       [rfid, unidade]
     );
+
     res.json(result.rows[0]);
   } catch (error) {
     res
@@ -73,7 +74,7 @@ app.get("/buscaColaboradorPeloRfid", async (req, res) => {
 app.get("/buscaColaboradorPelaMatricula", async (req, res) => {
   try {
     const matricula = req.query.matricula;
-    const unidade = req.query.unidade;
+    const unidade = "SEST";
     const result = await pool.query(
       `
       SELECT 
@@ -85,6 +86,16 @@ app.get("/buscaColaboradorPelaMatricula", async (req, res) => {
         unidade_dass = $2`,
       [matricula, unidade]
     );
+
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({
+          error:
+            "Colaborador não encontrado, verifique a matrícula. Você adicionou o 30 na frente?",
+        });
+    }
+
     res.json(result.rows[0].nome);
   } catch (error) {
     console.error(error);
@@ -148,7 +159,7 @@ app.get("/buscaConfiguracao", async (req, res) => {
 app.post("/salvaReserva", async (req, res) => {
   try {
     const { matricula, codigoRfid, opcaoSelecionada } = req.body;
-    let unidade = "ITB";
+    let unidade = "SEST";
 
     if (!matricula || !codigoRfid || !opcaoSelecionada) {
       if (Number(matricula).length !== 7) {
@@ -157,28 +168,13 @@ app.post("/salvaReserva", async (req, res) => {
       return res.status(422).json({ error: "Dados inválidos ou ausentes" });
     }
 
-    let buscaColaboradorListaFuncionario = `
-      SELECT * FROM colaborador.lista_funcionario`;
-
-    if (matricula.toString().startsWith("5")) {
-      buscaColaboradorListaFuncionario += `_itb`;
-      unidade = "ITB";
-    }
-
-    if (matricula.toString().startsWith("4")) {
-      buscaColaboradorListaFuncionario += `_vdc`;
-      unidade = "VDC";
-    }
-
-    buscaColaboradorListaFuncionario += ` WHERE matricula = $1`;
-
-    const query = await pool.query(buscaColaboradorListaFuncionario, [
-      matricula,
-    ]);
-    // const buscaColaboradorListaFuncionario = await pool.query(
-    //   "SELECT * FROM colaborador.lista_funcionario WHERE matricula = $1",
-    //   [matricula]
-    // );
+    const query = await pool.query(
+      `
+      SELECT * 
+      FROM colaborador.lista_funcionario 
+      WHERE matricula = $1`,
+      [matricula]
+    );
 
     if (query.rows.length === 0) {
       return res.status(404).json({ error: "Colaborador não encontrado" });
@@ -225,23 +221,27 @@ app.post("/salvaReserva", async (req, res) => {
       ]
     );
 
-    const buscaColaboradorRefeitorio = await pool.query(
-      "SELECT * FROM colaborador.colaboradores WHERE matricula = $1",
-      [matricula]
-    );
-    if (buscaColaboradorRefeitorio.rows.length === 0) {
-      await pool.query(
-        "INSERT INTO colaborador.colaboradores (rfid, matricula, nome, unidade_dass) VALUES ($1, $2, $3, $4)",
-        [codigoRfid, matricula, nome, unidade]
-      );
-    } else {
-      await pool.query(
-        "UPDATE colaborador.colaboradores SET rfid= $1, nome = $2, unidade_dass = $3 WHERE matricula = $4",
-        [codigoRfid, nome, unidade, matricula]
-      );
-    }
+    // const buscaColaboradorRefeitorio = await pool.query(
+    //   "SELECT * FROM colaborador.colaboradores WHERE matricula = $1",
+    //   [matricula]
+    // );
+    // if (buscaColaboradorRefeitorio.rows.length === 0) {
+    //   await pool.query(
+    //     "INSERT INTO colaborador.colaboradores (rfid, matricula, nome, unidade_dass) VALUES ($1, $2, $3, $4)",
+    //     [codigoRfid, matricula, nome, unidade]
+    //   );
+    // } else {
+    //   await pool.query(
+    //     "UPDATE colaborador.colaboradores SET rfid= $1, nome = $2, unidade_dass = $3 WHERE matricula = $4",
+    //     [codigoRfid, nome, unidade, matricula]
+    //   );
+    // }
 
-    res.status(200).json({ message: "Reserva salva com sucesso" });
+    res
+      .status(200)
+      .json({
+        message: `Reserva de ${opcaoSelecionada} para ${nome} realizada com sucesso`,
+      });
   } catch (error) {
     console.error("Erro ao salvar reserva:", error);
     res.status(500).json({ error: "Erro ao salvar reserva" });
@@ -371,6 +371,10 @@ app.delete("/delete-reserva", async (req, res) => {
 app.post("/entregaReservaPeloRfid", async (req, res) => {
   const { codigoRfid, unidade } = req.body;
 
+  if (isNaN(Number(codigoRfid))) {
+    return res.status(403).json({ error: "Aproxime um crachá válido" });
+  }
+
   if (!codigoRfid) {
     return res.status(422).json({ error: "Leitura inválida" });
   }
@@ -385,8 +389,16 @@ app.post("/entregaReservaPeloRfid", async (req, res) => {
       [codigoRfid]
     );
 
+    if (queryUnidadeByRfid.rows.length === 0) {
+      return res
+        .status(404)
+        .json({
+          error: "Reserva não encontrada. Tente verificar pela matrícula.",
+        });
+    }
+
     const unidade = queryUnidadeByRfid.rows[0].unidade_dass;
-    console.log(unidade);
+
     const verificaDisponibilidade = await pool.query(
       `SELECT consumido
       FROM refeitorio.reserva
@@ -431,7 +443,11 @@ app.post("/entregaReservaPeloRfid", async (req, res) => {
 
 app.post("/entregaReservaPelaMatricula", async (req, res) => {
   const { matricula } = req.body;
-  let unidade = "ITB";
+  let unidade = "SEST";
+
+  if (isNaN(Number(matricula))) {
+    return res.status(403).json({ error: "Insira uma matrícula válida" });
+  }
 
   if (!matricula) {
     return res.status(422).json({ error: "Leitura inválida" });
