@@ -90,7 +90,9 @@
           </div>
 
           <div class="row p-2 col-12">
-            <v-btn @click="postTraining" color="success">Cadastrar</v-btn>
+            <v-btn @click="postTraining('no-date')" color="success"
+              >Cadastrar</v-btn
+            >
           </div>
         </div>
       </v-carousel-item>
@@ -221,7 +223,9 @@
           </div>
 
           <div class="row p-2 col-12">
-            <v-btn @click="postTraining" color="success">Cadastrar</v-btn>
+            <v-btn @click="postTraining('date')" color="success"
+              >Cadastrar</v-btn
+            >
           </div>
         </div>
       </v-carousel-item>
@@ -834,7 +838,17 @@ export default {
       }
     },
 
-    postTraining() {
+    postTraining(order) {
+      if (order === "no-date") {
+        const dataAtual = new Date();
+        const formatoAnoMesDia =
+          dataAtual.getFullYear() +
+          "-" +
+          String(dataAtual.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(dataAtual.getDate()).padStart(2, "0");
+        this.dadosTreinamento.data = formatoAnoMesDia;
+      }
       if (
         !this.dadosTreinamento.nome ||
         !this.dadosTreinamento.setor ||
