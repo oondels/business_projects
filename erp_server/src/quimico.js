@@ -447,13 +447,16 @@ app.get("/pacoteSolicitacao", async (req, res) => {
           FROM
               quimico.solicitacoes_pacotes s
           WHERE
-              s.entregue = false
-              AND s.excluido = false
+              s.entregue = false AND
+              s.excluido = false AND
+              s.cancelado = false AND 
+              s.excluido = false
           GROUP BY
               s.celula,
               s.turno,
               s.marca,
-              s.fabrica
+              s.fabrica,
+              s.abastecendo
       )
       SELECT
           sa.ids,
@@ -489,7 +492,7 @@ app.get("/pacoteSolicitacao", async (req, res) => {
           SELECT p.*
           FROM quimico.produtos p
           WHERE p.id_modelo::text = ANY (regexp_split_to_array(sa.ids, '\, '))
-      ) p ON true  -- LATERAL join com os produtos
+      ) p ON true  
       GROUP BY
           sa.ids,
           sa.solicitacao_ids,
@@ -520,7 +523,6 @@ app.get("/pacoteSolicitacao", async (req, res) => {
         const produtosUnicos = new Map();
 
         obj.produtos.forEach((produto) => {
-          console.log(produto);
           // Cria uma chave única com base nos atributos do produto
           function normalizeText(text) {
             return text
